@@ -5,27 +5,32 @@ import discord
 from discord import app_commands
 from database import Database
 
-lib_path = os.path.join(os.path.dirname(__file__), "lib64", "f1", "AquesTalk.dll")
-aquestalk = ctypes.CDLL(lib_path)
-
-aquestalk.AquesTalk_Synthe_Utf8.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
-aquestalk.AquesTalk_Synthe_Utf8.restype = ctypes.POINTER(ctypes.c_ubyte)
-aquestalk.AquesTalk_FreeWave.argtypes = [ctypes.POINTER(ctypes.c_ubyte)]
-aquestalk.AquesTalk_FreeWave.restype = None
-
 class AquesTalkAudio:
-    def __init__(self, text, speed=100):
+    def __init__(self, text, speed=100, voice_name="f1"):
         self.text = text
         self.speed = speed
+        self.voice_name = voice_name
         self.temp_file = None
+        self.aquestalk = None
+
+    def _init_aquestalk(self):
+        lib_path = os.path.join(os.path.dirname(__file__), "lib64", self.voice_name, "AquesTalk.dll")
+        self.aquestalk = ctypes.CDLL(lib_path)
+        
+        self.aquestalk.AquesTalk_Synthe_Utf8.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
+        self.aquestalk.AquesTalk_Synthe_Utf8.restype = ctypes.POINTER(ctypes.c_ubyte)
+        self.aquestalk.AquesTalk_FreeWave.argtypes = [ctypes.POINTER(ctypes.c_ubyte)]
+        self.aquestalk.AquesTalk_FreeWave.restype = None
 
     # 音声合成
     def get_audio(self):
-        text_utf8 = self.text.encode('utf-8')
+        if self.aquestalk is None:
+            self._init_aquestalk()
 
+        text_utf8 = self.text.encode('utf-8')
         size = ctypes.c_int(0)
 
-        wav_data = aquestalk.AquesTalk_Synthe_Utf8(text_utf8, self.speed, ctypes.byref(size))
+        wav_data = self.aquestalk.AquesTalk_Synthe_Utf8(text_utf8, self.speed, ctypes.byref(size))
 
         if wav_data is None:
             return None
@@ -36,20 +41,19 @@ class AquesTalkAudio:
                 buffer = ctypes.string_at(wav_data, size.value)
                 temp.write(buffer)
 
-            aquestalk.AquesTalk_FreeWave(wav_data)
-
+            self.aquestalk.AquesTalk_FreeWave(wav_data)
             return self.temp_file
         except Exception as e:
-            aquestalk.AquesTalk_FreeWave(wav_data)
+            self.aquestalk.AquesTalk_FreeWave(wav_data)
             raise e
 
 # ボイスチャンネルで音声を再生する関数
-async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, speed: int = 100):
+async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, speed: int = 100, voice_name: str = "f1"):
     if not voice_client or not voice_client.is_connected():
         return False
 
     try:
-        audio = AquesTalkAudio(text, speed)
+        audio = AquesTalkAudio(text, speed, voice_name)
         audio_file = audio.get_audio()
 
         if audio_file is None:
@@ -79,6 +83,12 @@ async def read_message(message: discord.Message):
     if voice_client is None or not voice_client.is_connected():
         return
 
+    voice_settings = await db.get_voice_settings(message.guild.id)
+    voice_name = "f1"
+    speed = 100
+    if voice_settings:
+        voice_name, speed = voice_settings
+
     text = message.content.replace('\n', '').replace(' ', '')
 
-    await speak_in_voice_channel(voice_client, text)
+    await speak_in_voice_channel(voice_client, text, speed, voice_name)

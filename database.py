@@ -80,6 +80,24 @@ class Database:
                         )
                     """)
 
+                await cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM information_schema.tables
+                    WHERE table_schema = %s
+                    AND table_name = 'voice_settings'
+                """, (self.config['database']['database'],))
+
+                voice_settings_exists = await cursor.fetchone()
+
+                if not voice_settings_exists[0]:
+                    await cursor.execute("""
+                        CREATE TABLE voice_settings (
+                            server_id BIGINT PRIMARY KEY,
+                            voice_name VARCHAR(255) NOT NULL,
+                            speed INT NOT NULL DEFAULT 100
+                        )
+                    """)
+
                 await conn.commit()
 
     async def get_read_channels(self) -> Dict[int, int]:
@@ -133,6 +151,29 @@ class Database:
             async with conn.cursor() as cursor:
                 await cursor.execute("DELETE FROM autojoin WHERE server_id = %s", (server_id,))
                 await conn.commit()
+
+    async def set_voice_settings(self, server_id: int, voice_name: str, speed: int):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("""
+                    INSERT INTO voice_settings (server_id, voice_name, speed)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE 
+                    voice_name = %s,
+                    speed = %s
+                """, (server_id, voice_name, speed, voice_name, speed))
+                await conn.commit()
+
+    async def get_voice_settings(self, server_id: int) -> tuple[str, int] | None:
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("""
+                    SELECT voice_name, speed 
+                    FROM voice_settings 
+                    WHERE server_id = %s
+                """, (server_id,))
+                result = await cursor.fetchone()
+                return result if result else None
 
     async def close(self):
         if self.pool:

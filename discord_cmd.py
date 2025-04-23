@@ -116,3 +116,38 @@ def setup_commands(tree: app_commands.CommandTree):
             return
 
         await interaction.response.send_message(f"現在の自動参加設定:\n"f"ボイスチャンネル: {voice_channel.name}\n"f"テキストチャンネル: {text_channel.name}",)
+
+    @tree.command(name="setvoice", description="ボイスキャラクターと読み上げ速度を設定します")
+    @app_commands.describe(
+        voice="声の指定",
+        speed="読み上げ速度（デフォルト: 100）"
+    )
+    @app_commands.choices(voice=[
+        app_commands.Choice(name="f1", value="f1"),
+        app_commands.Choice(name="f2", value="f2"),
+        app_commands.Choice(name="imd1", value="diva"),
+        app_commands.Choice(name="igr", value="igr"),
+        app_commands.Choice(name="m1", value="m1"),
+        app_commands.Choice(name="m2", value="m2"),
+        app_commands.Choice(name="r1", value="r1"),
+    ])
+    async def setvoice(
+        interaction: discord.Interaction,
+        voice: str,
+        speed: int = 100
+    ):
+        await ensure_db_connection()
+
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("このコマンドは管理者のみ使用できます。", ephemeral=True)
+            return
+
+        if speed < 50 or speed > 200:
+            await interaction.response.send_message("速度は50から200の間で指定してください。", ephemeral=True)
+            return
+
+        try:
+            await db.set_voice_settings(interaction.guild_id, voice, speed)
+            await interaction.response.send_message(f"ボイス設定を更新しました。\n"f"キャラクター: {voice}\n"f"速度: {speed}")
+        except Exception as e:
+            await interaction.response.send_message(f"設定の更新に失敗しました: {str(e)}")
