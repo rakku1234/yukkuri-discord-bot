@@ -62,6 +62,24 @@ class Database:
                             ADD COLUMN chat_channel BIGINT NOT NULL
                         """)
 
+                await cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM information_schema.tables
+                    WHERE table_schema = %s
+                    AND table_name = 'autojoin'
+                """, (self.config['database']['database'],))
+
+                autojoin_exists = await cursor.fetchone()
+
+                if not autojoin_exists[0]:
+                    await cursor.execute("""
+                        CREATE TABLE autojoin (
+                            server_id BIGINT PRIMARY KEY,
+                            voice_channel BIGINT NOT NULL,
+                            text_channel BIGINT NOT NULL
+                        )
+                    """)
+
                 await conn.commit()
 
     async def get_read_channels(self) -> Dict[int, int]:
@@ -85,6 +103,35 @@ class Database:
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute("DELETE FROM read_channels WHERE server_id = %s", (server_id,))
+                await conn.commit()
+
+    async def set_autojoin(self, server_id: int, voice_channel: int, text_channel: int):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("""
+                    INSERT INTO autojoin (server_id, voice_channel, text_channel)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE 
+                    voice_channel = %s,
+                    text_channel = %s
+                """, (server_id, voice_channel, text_channel, voice_channel, text_channel))
+                await conn.commit()
+
+    async def get_autojoin(self, server_id: int) -> tuple[int, int] | None:
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("""
+                    SELECT voice_channel, text_channel 
+                    FROM autojoin 
+                    WHERE server_id = %s
+                """, (server_id,))
+                result = await cursor.fetchone()
+                return result if result else None
+
+    async def remove_autojoin(self, server_id: int):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("DELETE FROM autojoin WHERE server_id = %s", (server_id,))
                 await conn.commit()
 
     async def close(self):

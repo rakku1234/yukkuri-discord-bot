@@ -61,3 +61,58 @@ def setup_commands(tree: app_commands.CommandTree):
                     message += f"- {server.name}: {channel.name}\n"
 
         await interaction.response.send_message(message, ephemeral=True)
+
+    @tree.command(name="autojoin", description="自動参加するボイスチャンネルと読み上げるテキストチャンネルを設定します")
+    @app_commands.describe(
+        voice="参加するボイスチャンネル",
+        text="読み上げるテキストチャンネル"
+    )
+    async def autojoin(
+        interaction: discord.Interaction,
+        voice: discord.VoiceChannel,
+        text: discord.TextChannel
+    ):
+        await ensure_db_connection()
+
+        """if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("このコマンドは管理者のみ使用できます。", ephemeral=True)
+            return"""
+
+        try:
+            await db.set_autojoin(interaction.guild_id, voice.id, text.id)
+            await interaction.response.send_message(f"自動参加設定を更新しました。\n"f"ボイスチャンネル: {voice.name}\n"f"テキストチャンネル: {text.name}",)
+        except Exception as e:
+            await interaction.response.send_message(f"設定の更新に失敗しました: {str(e)}")
+
+    @tree.command(name="remove_autojoin", description="自動参加設定を削除します")
+    async def remove_autojoin(interaction: discord.Interaction):
+        from vc import db
+        await ensure_db_connection()
+
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("このコマンドは管理者のみ使用できます。", ephemeral=True)
+            return
+
+        try:
+            await db.remove_autojoin(interaction.guild_id)
+            await interaction.response.send_message("自動参加設定を削除しました。")
+        except Exception as e:
+            await interaction.response.send_message(f"設定の削除に失敗しました: {str(e)}")
+
+    @tree.command(name="get_autojoin", description="現在の自動参加設定を表示します")
+    async def get_autojoin(interaction: discord.Interaction):
+        await ensure_db_connection()
+
+        autojoin = await db.get_autojoin(interaction.guild_id)
+        if not autojoin:
+            await interaction.response.send_message("自動参加設定はありません。")
+            return
+
+        voice_channel = interaction.guild.get_channel(autojoin[0])
+        text_channel = interaction.guild.get_channel(autojoin[1])
+
+        if not voice_channel or not text_channel:
+            await interaction.response.send_message("設定されたチャンネルが見つかりません。", ephemeral=True)
+            return
+
+        await interaction.response.send_message(f"現在の自動参加設定:\n"f"ボイスチャンネル: {voice_channel.name}\n"f"テキストチャンネル: {text_channel.name}",)

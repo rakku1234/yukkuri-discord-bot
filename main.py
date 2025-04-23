@@ -24,6 +24,15 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
     if member.id == client.user.id:
         return
 
+    if before.channel is None and after.channel is not None:
+        autojoin = await db.get_autojoin(member.guild.id)
+        if autojoin and after.channel.id == autojoin[0]:
+            if member.guild.voice_client is None:
+                try:
+                    await after.channel.connect(self_deaf=True)
+                except Exception as e:
+                    print(f"{member.guild.name}の自動参加に失敗しました: {e}")
+
     voice_client = member.guild.voice_client
     if voice_client is None:
         return
