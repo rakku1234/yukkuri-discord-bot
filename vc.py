@@ -2,8 +2,9 @@ import os
 import ctypes
 import tempfile
 import discord
-from discord import app_commands
 from database import Database
+
+current_voice_settings = {}
 
 class AquesTalkAudio:
     def __init__(self, text, speed=100, voice_name="f1"):
@@ -83,7 +84,12 @@ async def read_message(message: discord.Message):
     if voice_client is None or not voice_client.is_connected():
         return
 
-    voice_settings = await db.get_voice_settings(message.guild.id)
+    voice_settings = current_voice_settings.get(message.guild.id)
+    if voice_settings is None:
+        voice_settings = await db.get_voice_settings(message.guild.id)
+        if voice_settings:
+            current_voice_settings[message.guild.id] = voice_settings
+
     voice_name = "f1"
     speed = 100
     if voice_settings:
@@ -92,3 +98,6 @@ async def read_message(message: discord.Message):
     text = message.content.replace('\n', '').replace(' ', '')
 
     await speak_in_voice_channel(voice_client, text, speed, voice_name)
+
+async def update_voice_settings(guild_id: int, voice_name: str, speed: int):
+    current_voice_settings[guild_id] = (voice_name, speed)
