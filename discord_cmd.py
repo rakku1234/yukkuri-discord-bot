@@ -90,9 +90,9 @@ def setup_commands(tree: app_commands.CommandTree):
         from vc import db
         await ensure_db_connection()
 
-        if not interaction.user.guild_permissions.administrator:
+        """if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("このコマンドは管理者のみ使用できます。", ephemeral=True)
-            return
+            return"""
 
         try:
             await db.remove_autojoin(interaction.guild_id)
@@ -138,10 +138,6 @@ def setup_commands(tree: app_commands.CommandTree):
         speed: int = 100
     ):
         await ensure_db_connection()
-
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("このコマンドは管理者のみ使用できます。", ephemeral=True)
-            return
 
         if speed < 50 or speed > 200:
             await interaction.response.send_message("速度は50から200の間で指定してください。", ephemeral=True)
