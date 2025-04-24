@@ -2,6 +2,7 @@ import os
 import ctypes
 import tempfile
 import discord
+import platform
 from database import Database
 
 current_voice_settings = {}
@@ -15,9 +16,17 @@ class AquesTalkAudio:
         self.aquestalk = None
 
     def _init_aquestalk(self):
-        lib_path = os.path.join(os.path.dirname(__file__), "lib64", self.voice_name, "AquesTalk.dll")
+        system = platform.system().lower()
+        if system == "windows":
+            lib_name = "AquesTalk.dll"
+        elif system == "linux":
+            lib_name = "libAquesTalk.so"
+        else:
+            raise OSError(f"Unsupported operating system: {system}")
+
+        lib_path = os.path.join(os.path.dirname(__file__), "lib64", self.voice_name, lib_name)
         self.aquestalk = ctypes.CDLL(lib_path)
-        
+
         self.aquestalk.AquesTalk_Synthe_Utf8.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
         self.aquestalk.AquesTalk_Synthe_Utf8.restype = ctypes.POINTER(ctypes.c_ubyte)
         self.aquestalk.AquesTalk_FreeWave.argtypes = [ctypes.POINTER(ctypes.c_ubyte)]
@@ -41,12 +50,11 @@ class AquesTalkAudio:
                 self.temp_file = temp.name
                 buffer = ctypes.string_at(wav_data, size.value)
                 temp.write(buffer)
-
-            self.aquestalk.AquesTalk_FreeWave(wav_data)
             return self.temp_file
         except Exception as e:
-            self.aquestalk.AquesTalk_FreeWave(wav_data)
             raise e
+        finally:
+            self.aquestalk.AquesTalk_FreeWave(wav_data)
 
 # ボイスチャンネルで音声を再生する関数
 async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, speed: int = 100, voice_name: str = "f1"):
