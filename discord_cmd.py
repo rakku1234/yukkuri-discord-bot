@@ -82,10 +82,6 @@ def setup_commands(tree: app_commands.CommandTree):
     ):
         await ensure_db_connection()
 
-        """if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("このコマンドは管理者のみ使用できます。", ephemeral=True)
-            return"""
-
         try:
             await db.set_autojoin(interaction.guild_id, voice.id, text.id)
             await interaction.response.send_message(f"自動参加設定を更新しました。\n"f"ボイスチャンネル: {voice.name}\n"f"テキストチャンネル: {text.name}",)
@@ -96,10 +92,6 @@ def setup_commands(tree: app_commands.CommandTree):
     async def remove_autojoin(interaction: discord.Interaction):
         from vc import db
         await ensure_db_connection()
-
-        """if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("このコマンドは管理者のみ使用できます。", ephemeral=True)
-            return"""
 
         try:
             await db.remove_autojoin(interaction.guild_id)
