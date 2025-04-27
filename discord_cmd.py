@@ -170,3 +170,65 @@ def setup_commands(tree: app_commands.CommandTree):
 
         voice_client.stop()
         await interaction.response.send_message("読み上げを停止しました。")
+
+    dict_group = app_commands.Group(name="dict", description="辞書機能の設定")
+
+    @dict_group.command(name="add", description="単語の読み方を登録します")
+    @app_commands.describe(
+        word="登録する単語",
+        to="変換後の読み方"
+    )
+    async def dict_add(
+        interaction: discord.Interaction,
+        word: str,
+        to: str
+    ):
+        await ensure_db_connection()
+
+        try:
+            await db.set_dictionary_replacement(interaction.guild_id, word, to)
+            await interaction.response.send_message(f"単語を登録しました。\n「{word}」→「{to}」")
+        except Exception as e:
+            await interaction.response.send_message(f"単語の登録に失敗しました: {str(e)}", ephemeral=True)
+
+    @dict_group.command(name="list", description="登録されている単語の一覧を表示します")
+    async def dict_list(interaction: discord.Interaction):
+        await ensure_db_connection()
+
+        try:
+            replacements = await db.get_dictionary_replacements(interaction.guild_id)
+
+            if not replacements:
+                await interaction.response.send_message("登録されている単語はありません。", ephemeral=True)
+                return
+
+            message = "登録されている単語一覧:\n"
+            for original, replacement in replacements.items():
+                message += f"- 「{original}」→「{replacement}」\n"
+
+            await interaction.response.send_message(message, ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"単語一覧の取得に失敗しました: {str(e)}", ephemeral=True)
+
+    @dict_group.command(name="remove", description="登録されている単語を削除します")
+    @app_commands.describe(
+        word="削除する単語"
+    )
+    async def dict_remove(
+        interaction: discord.Interaction,
+        word: str
+    ):
+        await ensure_db_connection()
+
+        try:
+            replacements = await db.get_dictionary_replacements(interaction.guild_id)
+            if word not in replacements:
+                await interaction.response.send_message(f"単語「{word}」は登録されていません。", ephemeral=True)
+                return
+
+            await db.remove_dictionary_replacement(interaction.guild_id, word)
+            await interaction.response.send_message(f"単語「{word}」を削除しました。")
+        except Exception as e:
+            await interaction.response.send_message(f"単語の削除に失敗しました: {str(e)}", ephemeral=True)
+
+    tree.add_command(dict_group)

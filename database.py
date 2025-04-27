@@ -100,6 +100,25 @@ class Database:
                         )
                     """)
 
+                await cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM information_schema.tables
+                    WHERE table_schema = %s
+                    AND table_name = 'dictionary_replacements'
+                """, (self.config['database']['database'],))
+
+                dictionary_replacements_exists = await cursor.fetchone()
+
+                if not dictionary_replacements_exists[0]:
+                    await cursor.execute("""
+                        CREATE TABLE dictionary_replacements (
+                            server_id BIGINT NOT NULL,
+                            original_text VARCHAR(255) NOT NULL,
+                            replacement_text VARCHAR(255) NOT NULL,
+                            PRIMARY KEY (server_id, original_text)
+                        )
+                    """)
+
                 await conn.commit()
 
     async def get_read_channels(self) -> Dict[int, int]:
@@ -176,6 +195,36 @@ class Database:
                 """, (server_id, user_id))
                 result = await cursor.fetchone()
                 return result if result else None
+
+    async def set_dictionary_replacement(self, server_id: int, original_text: str, replacement_text: str):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("""
+                    INSERT INTO dictionary_replacements (server_id, original_text, replacement_text)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE replacement_text = %s
+                """, (server_id, original_text, replacement_text, replacement_text))
+                await conn.commit()
+
+    async def get_dictionary_replacements(self, server_id: int) -> Dict[str, str]:
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("""
+                    SELECT original_text, replacement_text 
+                    FROM dictionary_replacements 
+                    WHERE server_id = %s
+                """, (server_id,))
+                rows = await cursor.fetchall()
+                return {row[0]: row[1] for row in rows}
+
+    async def remove_dictionary_replacement(self, server_id: int, original_text: str):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                await cursor.execute("""
+                    DELETE FROM dictionary_replacements 
+                    WHERE server_id = %s AND original_text = %s
+                """, (server_id, original_text))
+                await conn.commit()
 
     async def close(self):
         if self.pool:

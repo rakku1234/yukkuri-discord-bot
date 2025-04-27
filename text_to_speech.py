@@ -10,14 +10,10 @@ def convert_text_to_speech(text: str) -> str:
     dic_dir = os.path.join(base_dir, 'AqKanji2Koe', 'aq_dic')
 
     if system == 'windows':
-        #usr_dic_lib = os.path.join(dll_dir, "AqUsrDic.dll")
         kanji2koe_lib = os.path.join(dll_dir, 'AqKanji2Koe.dll')
-        #ctypes.WinDLL(usr_dic_lib)
         aq_kanji2koe = ctypes.WinDLL(kanji2koe_lib)
     elif system == 'linux':
-        #usr_dic_lib = os.path.join(dll_dir, "libAqUsrDic.so")
         kanji2koe_lib = os.path.join(dll_dir, 'libAqKanji2Koe.so')
-        #ctypes.CDLL(usr_dic_lib)
         aq_kanji2koe = ctypes.CDLL(kanji2koe_lib)
     else:
         raise OSError(f"サポートされていないプラットフォームです: {system}")

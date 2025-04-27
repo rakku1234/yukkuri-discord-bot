@@ -136,6 +136,10 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
     if voice_client is None or not voice_client.is_connected():
         return
 
+    dictionary_replacements = await db.get_dictionary_replacements(guild.id)
+    for original, replacement in dictionary_replacements.items():
+        text = text.replace(original, replacement)
+
     voice_settings = current_voice_settings.get((guild.id, author.id if author else 0))
     if voice_settings is None and author:
         voice_settings = await db.get_voice_settings(guild.id, author.id)
