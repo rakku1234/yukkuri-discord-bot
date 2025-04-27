@@ -15,7 +15,7 @@ message_queues = defaultdict(asyncio.Queue)
 reading_tasks = {}
 
 class AquesTalkAudio:
-    def __init__(self, text, speed=100, voice_name='f1'):
+    def __init__(self, text, speed=100, voice_name="f1"):
         self.text = text
         self.speed = speed
         self.voice_name = voice_name
@@ -111,26 +111,26 @@ async def process_message_queue(guild_id: int):
 
 # メッセージを読み上げる関数
 async def read_message(message_or_text, guild=None, author=None, channel=None):
-    if not isinstance(message_or_text, str):
+    if isinstance(message_or_text, str):
         text = message_or_text
         if guild is None or channel is None:
             return
+    else:
+        message = message_or_text
+        if message.author.bot:
+            return
 
-    message = message_or_text
-    if message.author.bot:
-        return
+        if db.pool is None:
+            await db.connect()
 
-    if db.pool is None:
-        await db.connect()
+        channels = await db.get_read_channels()
+        if message.guild.id not in channels or message.channel.id != channels[message.guild.id]:
+            return
 
-    channels = await db.get_read_channels()
-    if message.guild.id not in channels or message.channel.id != channels[message.guild.id]:
-        return
-
-    guild = message.guild
-    author = message.author
-    channel = message.channel
-    text = message.content.replace('\n', '').replace(' ', '')
+        guild = message.guild
+        author = message.author
+        channel = message.channel
+        text = message.content.replace('\n', '').replace(' ', '')
 
     voice_client = guild.voice_client
     if voice_client is None or not voice_client.is_connected():
@@ -146,7 +146,7 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
         if voice_settings:
             current_voice_settings[(guild.id, author.id)] = voice_settings
 
-    voice_name = 'f1'
+    voice_name = "f1"
     speed = 100
     if voice_settings:
         voice_name, speed = voice_settings
@@ -159,10 +159,10 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
             text = text.replace(match.group(0), user.display_name)
 
     url_pattern = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+(?:\/[^\s]*)?'
-    text = re.sub(url_pattern, 'URL省略', text)
+    text = re.sub(url_pattern, "URL省略", text)
 
     custom_emoji_pattern = r'<:[a-zA-Z0-9_]+:[0-9]+>'
-    text = re.sub(custom_emoji_pattern, '', text)
+    text = re.sub(custom_emoji_pattern, "", text)
 
     text = convert_text_to_speech(text)
 

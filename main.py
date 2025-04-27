@@ -13,7 +13,7 @@ tree = app_commands.CommandTree(client)
 
 @client.event
 async def on_ready():
-    logger.info(f"{client.user} としてログインしました")
+    logger.info(f'{client.user} としてログインしました')
 
     await db.connect()
 
@@ -73,4 +73,4 @@ async def on_message(message):
 
     await read_message(message)
 
-client.run(load_config()['discord']['token'])
+client.run(load_config()["discord"]["token"])
