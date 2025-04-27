@@ -25,7 +25,7 @@ class AquesTalkAudio:
         elif system == 'linux':
             lib_name = 'libAquesTalk.so'
         else:
-            raise OSError(f"Unsupported operating system: {system}")
+            raise OSError(f"サポートされていないプラットフォームです: {system}")
 
         lib_path = os.path.join(os.path.dirname(__file__), 'AquesTalk1', 'lib64', self.voice_name, lib_name)
         self.aquestalk = ctypes.CDLL(lib_path)

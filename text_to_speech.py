@@ -1,17 +1,26 @@
 import ctypes
 import os
+import platform
 from loguru import logger
 
 def convert_text_to_speech(text: str) -> str:
+    system = platform.system().lower()
     base_dir = os.path.dirname(__file__)
-    dll_dir = os.path.join(base_dir, "AqKanji2Koe", "lib64")
-    dic_dir = os.path.join(base_dir, "AqKanji2Koe", "aq_dic")
+    dll_dir = os.path.join(base_dir, 'AqKanji2Koe', 'lib64')
+    dic_dir = os.path.join(base_dir, 'AqKanji2Koe', 'aq_dic')
 
-    usr_dic_dll = os.path.join(dll_dir, "AqUsrDic.dll")
-    ctypes.WinDLL(usr_dic_dll)
-
-    kanji2koe_dll = os.path.join(dll_dir, "AqKanji2Koe.dll")
-    aq_kanji2koe = ctypes.WinDLL(kanji2koe_dll)
+    if system == 'windows':
+        #usr_dic_lib = os.path.join(dll_dir, "AqUsrDic.dll")
+        kanji2koe_lib = os.path.join(dll_dir, 'AqKanji2Koe.dll')
+        #ctypes.WinDLL(usr_dic_lib)
+        aq_kanji2koe = ctypes.WinDLL(kanji2koe_lib)
+    elif system == 'linux':
+        #usr_dic_lib = os.path.join(dll_dir, "libAqUsrDic.so")
+        kanji2koe_lib = os.path.join(dll_dir, 'libAqKanji2Koe.so')
+        #ctypes.CDLL(usr_dic_lib)
+        aq_kanji2koe = ctypes.CDLL(kanji2koe_lib)
+    else:
+        raise OSError(f"サポートされていないプラットフォームです: {system}")
 
     aq_kanji2koe.AqKanji2Koe_Create.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int)]
     aq_kanji2koe.AqKanji2Koe_Create.restype = ctypes.c_void_p
