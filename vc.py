@@ -125,6 +125,10 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
 
     url_pattern = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+(?:\/[^\s]*)?'
     text = re.sub(url_pattern, "URL省略", text)
+
+    custom_emoji_pattern = r'<:[a-zA-Z0-9_]+:[0-9]+>'
+    text = re.sub(custom_emoji_pattern, "", text)
+
     text = convert_text_to_speech(text)
 
     await speak_in_voice_channel(voice_client, text, speed, voice_name)
