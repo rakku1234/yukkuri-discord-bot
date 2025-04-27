@@ -6,8 +6,10 @@ import platform
 import re
 from database import Database
 from text_to_speech import convert_text_to_speech
+from loguru import logger
 
 current_voice_settings = {}
+logger.add(enqueue=True)
 
 class AquesTalkAudio:
     def __init__(self, text, speed=100, voice_name="f1"):
@@ -73,7 +75,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, s
         voice_client.play(discord.FFmpegPCMAudio(audio_file), after=lambda e: os.unlink(audio_file))
         return True
     except Exception as e:
-        print(f"音声合成エラー: {e}")
+        logger.error(f"音声合成エラー: {e}")
         return False
 
 db = Database()

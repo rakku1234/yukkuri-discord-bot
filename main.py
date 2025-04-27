@@ -3,6 +3,7 @@ from discord import app_commands
 from discord_cmd import setup_commands
 from vc import read_message, db
 from config import load_config
+from loguru import logger
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -10,9 +11,11 @@ intents.voice_states = True
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
+logger.add(enqueue=True)
+
 @client.event
 async def on_ready():
-    print(f'{client.user} としてログインしました')
+    logger.info(f'{client.user} としてログインしました')
 
     await db.connect()
 
@@ -31,7 +34,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 try:
                     await after.channel.connect(self_deaf=True)
                 except Exception as e:
-                    print(f"{member.guild.name}の自動参加に失敗しました: {e}")
+                    logger.error(f"{member.guild.name}の自動参加に失敗しました: {e}")
 
         voice_client = member.guild.voice_client
         if voice_client and voice_client.is_connected():

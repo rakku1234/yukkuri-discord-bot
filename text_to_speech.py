@@ -1,5 +1,8 @@
 import ctypes
 import os
+from loguru import logger
+
+logger.add(enqueue=True)
 
 def convert_text_to_speech(text: str) -> str:
     base_dir = os.path.dirname(__file__)
@@ -40,4 +43,4 @@ def convert_text_to_speech(text: str) -> str:
                 instance_ptr = ctypes.c_void_p(instance)
                 aq_kanji2koe.AqKanji2Koe_Release(instance_ptr)
             except Exception as e:
-                print(f"AqKanji2Koe_Releaseでエラーが発生しました: {e}")
+                logger.error(f"AqKanji2Koe_Releaseでエラーが発生しました: {e}")
