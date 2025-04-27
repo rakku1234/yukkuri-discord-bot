@@ -4,11 +4,15 @@ import tempfile
 import discord
 import platform
 import re
+import asyncio
+from collections import defaultdict
 from database import Database
 from text_to_speech import convert_text_to_speech
 from loguru import logger
 
 current_voice_settings = {}
+message_queues = defaultdict(asyncio.Queue)
+reading_tasks = {}
 
 class AquesTalkAudio:
     def __init__(self, text, speed=100, voice_name="f1"):
@@ -71,13 +75,39 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, s
         if audio_file is None:
             return False
 
-        voice_client.play(discord.FFmpegPCMAudio(audio_file), after=lambda e: os.unlink(audio_file))
+        future = asyncio.Future()
+        def after_playing(error):
+            if error:
+                future.set_exception(error)
+            else:
+                future.set_result(None)
+            os.unlink(audio_file)
+
+        voice_client.play(discord.FFmpegPCMAudio(audio_file), after=after_playing)
+        await future
         return True
     except Exception as e:
         logger.error(f"音声合成エラー: {e}")
         return False
 
 db = Database()
+
+# メッセージキューを処理する関数
+async def process_message_queue(guild_id: int):
+    while True:
+        try:
+            message_data = await message_queues[guild_id].get()
+            if message_data is None:
+                break
+
+            text, speed, voice_name, voice_client = message_data
+
+            await speak_in_voice_channel(voice_client, text, speed, voice_name)
+
+            message_queues[guild_id].task_done()
+        except Exception as e:
+            logger.error(f"メッセージキュー処理エラー: {e}")
+            continue
 
 # メッセージを読み上げる関数
 async def read_message(message_or_text, guild=None, author=None, channel=None):
@@ -132,7 +162,10 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
 
     text = convert_text_to_speech(text)
 
-    await speak_in_voice_channel(voice_client, text, speed, voice_name)
+    await message_queues[guild.id].put((text, speed, voice_name, voice_client))
+
+    if guild.id not in reading_tasks or reading_tasks[guild.id].done():
+        reading_tasks[guild.id] = asyncio.create_task(process_message_queue(guild.id))
 
 async def update_voice_settings(guild_id: int, user_id: int, voice_name: str, speed: int):
     current_voice_settings[(guild_id, user_id)] = (voice_name, speed)

@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands
 from database import Database
-from vc import update_voice_settings
+from vc import update_voice_settings, message_queues, reading_tasks
 
 db = Database()
 
@@ -36,10 +36,17 @@ def setup_commands(tree: app_commands.CommandTree):
             return
 
         try:
+            if interaction.guild_id in message_queues:
+                await message_queues[interaction.guild_id].put(None)
+                if interaction.guild_id in reading_tasks and not reading_tasks[interaction.guild_id].done():
+                    await reading_tasks[interaction.guild_id]
+                if interaction.guild_id in reading_tasks:
+                    del reading_tasks[interaction.guild_id]
+                del message_queues[interaction.guild_id]
             await interaction.guild.voice_client.disconnect()
-            await interaction.response.send_message("ボイスチャンネルから退出しました！読み上げを停止しました。")
-
             await db.remove_read_channel(interaction.guild_id)
+
+            await interaction.response.send_message("ボイスチャンネルから退出しました！読み上げを停止しました。")
         except discord.ClientException:
             await interaction.response.send_message("ボイスチャンネルから退出できませんでした。", ephemeral=True)
 
