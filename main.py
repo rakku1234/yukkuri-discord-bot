@@ -33,6 +33,25 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 except Exception as e:
                     print(f"{member.guild.name}の自動参加に失敗しました: {e}")
 
+        voice_client = member.guild.voice_client
+        if voice_client and voice_client.is_connected():
+            await read_message(
+                f"{member.display_name}が参加しました",
+                guild=member.guild,
+                author=member,
+                channel=after.channel
+            )
+
+    if before.channel is not None and after.channel is None:
+        voice_client = member.guild.voice_client
+        if voice_client and voice_client.is_connected():
+            await read_message(
+                f"{member.display_name}が退出しました",
+                guild=member.guild,
+                author=member,
+                channel=before.channel
+            )
+
     voice_client = member.guild.voice_client
     if voice_client is None:
         return

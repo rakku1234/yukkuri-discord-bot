@@ -79,38 +79,47 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, s
 db = Database()
 
 # メッセージを読み上げる関数
-async def read_message(message: discord.Message):
-    if message.author.bot:
-        return
+async def read_message(message_or_text, guild=None, author=None, channel=None):
+    if isinstance(message_or_text, str):
+        text = message_or_text
+        if guild is None or channel is None:
+            return
+    else:
+        message = message_or_text
+        if message.author.bot:
+            return
 
-    if db.pool is None:
-        await db.connect()
+        if db.pool is None:
+            await db.connect()
 
-    channels = await db.get_read_channels()
-    if message.guild.id not in channels or message.channel.id != channels[message.guild.id]:
-        return
+        channels = await db.get_read_channels()
+        if message.guild.id not in channels or message.channel.id != channels[message.guild.id]:
+            return
 
-    voice_client = message.guild.voice_client
+        guild = message.guild
+        author = message.author
+        channel = message.channel
+        text = message.content.replace('\n', '').replace(' ', '')
+
+    voice_client = guild.voice_client
     if voice_client is None or not voice_client.is_connected():
         return
 
-    voice_settings = current_voice_settings.get((message.guild.id, message.author.id))
-    if voice_settings is None:
-        voice_settings = await db.get_voice_settings(message.guild.id, message.author.id)
+    voice_settings = current_voice_settings.get((guild.id, author.id if author else 0))
+    if voice_settings is None and author:
+        voice_settings = await db.get_voice_settings(guild.id, author.id)
         if voice_settings:
-            current_voice_settings[(message.guild.id, message.author.id)] = voice_settings
+            current_voice_settings[(guild.id, author.id)] = voice_settings
 
     voice_name = "f1"
     speed = 100
     if voice_settings:
         voice_name, speed = voice_settings
 
-    text = message.content.replace('\n', '').replace(' ', '')
-
     mention_pattern = r'<@!?(\d+)>'
     for match in re.finditer(mention_pattern, text):
         user_id = int(match.group(1))
-        user = message.guild.get_member(user_id)
+        user = guild.get_member(user_id)
         if user:
             text = text.replace(match.group(0), user.display_name)
 
