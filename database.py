@@ -92,9 +92,11 @@ class Database:
                 if not voice_settings_exists[0]:
                     await cursor.execute("""
                         CREATE TABLE voice_settings (
-                            server_id BIGINT PRIMARY KEY,
+                            server_id BIGINT,
+                            user_id BIGINT,
                             voice_name VARCHAR(255) NOT NULL,
-                            speed INT NOT NULL DEFAULT 100
+                            speed INT NOT NULL DEFAULT 100,
+                            PRIMARY KEY (server_id, user_id)
                         )
                     """)
 
@@ -152,26 +154,26 @@ class Database:
                 await cursor.execute("DELETE FROM autojoin WHERE server_id = %s", (server_id,))
                 await conn.commit()
 
-    async def set_voice_settings(self, server_id: int, voice_name: str, speed: int):
+    async def set_voice_settings(self, server_id: int, user_id: int, voice_name: str, speed: int):
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute("""
-                    INSERT INTO voice_settings (server_id, voice_name, speed)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO voice_settings (server_id, user_id, voice_name, speed)
+                    VALUES (%s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE 
                     voice_name = %s,
                     speed = %s
-                """, (server_id, voice_name, speed, voice_name, speed))
+                """, (server_id, user_id, voice_name, speed, voice_name, speed))
                 await conn.commit()
 
-    async def get_voice_settings(self, server_id: int) -> tuple[str, int] | None:
+    async def get_voice_settings(self, server_id: int, user_id: int) -> tuple[str, int] | None:
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute("""
                     SELECT voice_name, speed 
                     FROM voice_settings 
-                    WHERE server_id = %s
-                """, (server_id,))
+                    WHERE server_id = %s AND user_id = %s
+                """, (server_id, user_id))
                 result = await cursor.fetchone()
                 return result if result else None
 

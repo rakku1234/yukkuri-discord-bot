@@ -144,8 +144,8 @@ def setup_commands(tree: app_commands.CommandTree):
             return
 
         try:
-            await db.set_voice_settings(interaction.guild_id, voice, speed)
-            await update_voice_settings(interaction.guild_id, voice, speed)
+            await db.set_voice_settings(interaction.guild_id, interaction.user.id, voice, speed)
+            await update_voice_settings(interaction.guild_id, interaction.user.id, voice, speed)
             await interaction.response.send_message(f"ボイス設定を更新しました。\n"f"キャラクター: {voice}\n"f"速度: {speed}")
         except Exception as e:
             await interaction.response.send_message(f"設定の更新に失敗しました: {str(e)}")

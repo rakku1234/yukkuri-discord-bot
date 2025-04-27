@@ -4,6 +4,7 @@ import tempfile
 import discord
 import platform
 from database import Database
+from text_to_speech import convert_text_to_speech
 
 current_voice_settings = {}
 
@@ -17,14 +18,14 @@ class AquesTalkAudio:
 
     def _init_aquestalk(self):
         system = platform.system().lower()
-        if system == "windows":
-            lib_name = "AquesTalk.dll"
-        elif system == "linux":
-            lib_name = "libAquesTalk.so"
+        if system == 'windows':
+            lib_name = 'AquesTalk.dll'
+        elif system == 'linux':
+            lib_name = 'libAquesTalk.so'
         else:
             raise OSError(f"Unsupported operating system: {system}")
 
-        lib_path = os.path.join(os.path.dirname(__file__), "lib64", self.voice_name, lib_name)
+        lib_path = os.path.join(os.path.dirname(__file__), 'AquesTalk1', 'lib64', self.voice_name, lib_name)
         self.aquestalk = ctypes.CDLL(lib_path)
 
         self.aquestalk.AquesTalk_Synthe_Utf8.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
@@ -92,11 +93,11 @@ async def read_message(message: discord.Message):
     if voice_client is None or not voice_client.is_connected():
         return
 
-    voice_settings = current_voice_settings.get(message.guild.id)
+    voice_settings = current_voice_settings.get((message.guild.id, message.author.id))
     if voice_settings is None:
-        voice_settings = await db.get_voice_settings(message.guild.id)
+        voice_settings = await db.get_voice_settings(message.guild.id, message.author.id)
         if voice_settings:
-            current_voice_settings[message.guild.id] = voice_settings
+            current_voice_settings[(message.guild.id, message.author.id)] = voice_settings
 
     voice_name = "f1"
     speed = 100
@@ -104,8 +105,9 @@ async def read_message(message: discord.Message):
         voice_name, speed = voice_settings
 
     text = message.content.replace('\n', '').replace(' ', '')
+    text = convert_text_to_speech(text)
 
     await speak_in_voice_channel(voice_client, text, speed, voice_name)
 
-async def update_voice_settings(guild_id: int, voice_name: str, speed: int):
-    current_voice_settings[guild_id] = (voice_name, speed)
+async def update_voice_settings(guild_id: int, user_id: int, voice_name: str, speed: int):
+    current_voice_settings[(guild_id, user_id)] = (voice_name, speed)
