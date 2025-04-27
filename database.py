@@ -3,9 +3,14 @@ from typing import Dict
 from config import load_config
 
 class Database:
-    def __init__(self):
-        self.pool = None
-        self.config = load_config()
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Database, cls).__new__(cls)
+            cls._instance.pool = None
+            cls._instance.config = load_config()
+        return cls._instance
 
     async def connect(self):
         db_config = {
