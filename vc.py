@@ -3,6 +3,7 @@ import ctypes
 import tempfile
 import discord
 import platform
+import re
 from database import Database
 from text_to_speech import convert_text_to_speech
 
@@ -105,6 +106,16 @@ async def read_message(message: discord.Message):
         voice_name, speed = voice_settings
 
     text = message.content.replace('\n', '').replace(' ', '')
+
+    mention_pattern = r'<@!?(\d+)>'
+    for match in re.finditer(mention_pattern, text):
+        user_id = int(match.group(1))
+        user = message.guild.get_member(user_id)
+        if user:
+            text = text.replace(match.group(0), user.display_name)
+
+    url_pattern = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+'
+    text = re.sub(url_pattern, "URL省略", text)
     text = convert_text_to_speech(text)
 
     await speak_in_voice_channel(voice_client, text, speed, voice_name)

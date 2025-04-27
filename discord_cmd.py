@@ -149,3 +149,17 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message(f"ボイス設定を更新しました。\n"f"キャラクター: {voice}\n"f"速度: {speed}")
         except Exception as e:
             await interaction.response.send_message(f"設定の更新に失敗しました: {str(e)}")
+
+    @tree.command(name="skip", description="現在の読み上げを停止します")
+    async def skip(interaction: discord.Interaction):
+        if interaction.guild.voice_client is None:
+            await interaction.response.send_message("ボイスチャンネルに接続していません。", ephemeral=True)
+            return
+
+        voice_client = interaction.guild.voice_client
+        if not voice_client.is_playing():
+            await interaction.response.send_message("現在読み上げ中の音声はありません。", ephemeral=True)
+            return
+
+        voice_client.stop()
+        await interaction.response.send_message("読み上げを停止しました。")
