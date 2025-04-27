@@ -114,7 +114,7 @@ async def read_message(message: discord.Message):
         if user:
             text = text.replace(match.group(0), user.display_name)
 
-    url_pattern = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+'
+    url_pattern = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+(?:\/[^\s]*)?'
     text = re.sub(url_pattern, "URL省略", text)
     text = convert_text_to_speech(text)
 
