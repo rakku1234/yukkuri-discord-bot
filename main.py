@@ -11,8 +11,6 @@ intents.voice_states = True
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
-logger.add(enqueue=True)
-
 @client.event
 async def on_ready():
     logger.info(f'{client.user} としてログインしました')

@@ -2,8 +2,6 @@ import ctypes
 import os
 from loguru import logger
 
-logger.add(enqueue=True)
-
 def convert_text_to_speech(text: str) -> str:
     base_dir = os.path.dirname(__file__)
     dll_dir = os.path.join(base_dir, "AqKanji2Koe", "lib64")

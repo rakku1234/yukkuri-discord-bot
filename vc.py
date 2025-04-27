@@ -9,7 +9,6 @@ from text_to_speech import convert_text_to_speech
 from loguru import logger
 
 current_voice_settings = {}
-logger.add(enqueue=True)
 
 class AquesTalkAudio:
     def __init__(self, text, speed=100, voice_name="f1"):
