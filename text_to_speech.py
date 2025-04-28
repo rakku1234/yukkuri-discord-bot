@@ -6,7 +6,7 @@ from loguru import logger
 def convert_text_to_speech(text: str) -> str:
     system = platform.system().lower()
     base_dir = os.path.dirname(__file__)
-    dll_dir = os.path.join(base_dir, 'AqKanji2Koe', 'lib64')
+    dll_dir = os.path.join(base_dir, 'AqKanji2Koe', 'lib')
     dic_dir = os.path.join(base_dir, 'AqKanji2Koe', 'aq_dic')
 
     if system == 'windows':

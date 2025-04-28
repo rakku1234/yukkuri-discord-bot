@@ -1,9 +1,20 @@
 import discord
+import json
 from discord import app_commands
 from database import Database
 from vc import update_voice_settings, message_queues, reading_tasks
+from loguru import logger
 
 db = Database()
+
+def load_voice_characters() -> list[dict]:
+    try:
+        with open('voice_character.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data['AquesTalk1']['voices']
+    except Exception:
+        logger.error("音声キャラクターの設定を読み込めませんでした")
+        return []
 
 async def ensure_db_connection():
     if db.pool is None:
@@ -116,21 +127,18 @@ def setup_commands(tree: app_commands.CommandTree):
 
         await interaction.response.send_message(f"現在の自動参加設定:\n"f"ボイスチャンネル: {voice_channel.name}\n"f"テキストチャンネル: {text_channel.name}",)
 
+    voice_characters = load_voice_characters()
+    voice_choices = [
+        app_commands.Choice(name=voice["name"], value=voice["value"])
+        for voice in voice_characters
+    ]
+
     @tree.command(name='setvoice', description='ボイスキャラクターと読み上げ速度を設定します')
     @app_commands.describe(
         voice='声の指定',
         speed='読み上げ速度（デフォルト: 100）'
     )
-    @app_commands.choices(voice=[
-        app_commands.Choice(name='女声1', value='f1'),
-        app_commands.Choice(name='女声2', value='f2'),
-        app_commands.Choice(name='男声1', value='m1'),
-        app_commands.Choice(name='男声2', value='m2'),
-        app_commands.Choice(name='中性', value='imd1'),
-        app_commands.Choice(name='機械1', value='jgr'),
-        app_commands.Choice(name='機械2', value='dvd'),
-        app_commands.Choice(name='ロボット', value='r1'),
-    ])
+    @app_commands.choices(voice=voice_choices)
     async def setvoice(
         interaction: discord.Interaction,
         voice: str,

@@ -1,0 +1,14 @@
+{
+    "AquesTalk1": {
+        "voices": [
+            {"name": "女声1", "value": "f1"},
+            {"name": "女声2", "value": "f2"},
+            {"name": "男声1", "value": "m1"},
+            {"name": "男声2", "value": "m2"},
+            {"name": "中性", "value": "imd1"},
+            {"name": "機械1", "value": "jgr"},
+            {"name": "機械2", "value": "dvd"},
+            {"name": "ロボット", "value": "r1"}
+        ]
+    }
+}
