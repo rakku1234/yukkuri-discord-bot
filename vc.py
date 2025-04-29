@@ -107,18 +107,22 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
     if voice_settings:
         voice_name, speed, engine = voice_settings
 
-    mention_pattern = r'<@!?(\d+)>'
-    for match in re.finditer(mention_pattern, text):
+    for match in re.finditer(r'<@!?(\d+)>', text):
         user_id = int(match.group(1))
         user = guild.get_member(user_id)
         if user:
             text = text.replace(match.group(0), user.display_name)
+    
+    for channel_id_str in re.findall(r'<#(\d+)>', text):
+        channel_id = int(channel_id_str)
+        channel = guild.get_channel(channel_id)
+        if channel:
+            cleaned_channel_name = re.sub(r'[\U0001F300-\U0001F64F\U0001F680-\U0001F6FF\u2600-\u26FF\u2700-\u27BF]', '', channel.name)
+            text = text.replace(f'<#{channel_id_str}>', cleaned_channel_name)
 
-    url_pattern = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+(?:\/[^\s]*)?'
-    text = re.sub(url_pattern, 'URL省略', text)
+    text = re.sub(r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+(?:\/[^\s]*)?', 'URL省略', text)
 
-    custom_emoji_pattern = r'<:[a-zA-Z0-9_]+:[0-9]+>'
-    text = re.sub(custom_emoji_pattern, '', text)
+    text = re.sub(r'<:[a-zA-Z0-9_]+:[0-9]+>', '', text)
 
     if engine == "aquestalk":
         text = convert_text_to_speech(text)
