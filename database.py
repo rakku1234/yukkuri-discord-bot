@@ -101,6 +101,7 @@ class Database:
                             user_id BIGINT,
                             voice_name VARCHAR(255) NOT NULL,
                             speed INT NOT NULL DEFAULT 100,
+                            engine VARCHAR(50) NOT NULL DEFAULT 'aquestalk',
                             PRIMARY KEY (server_id, user_id)
                         )
                     """)
@@ -178,23 +179,24 @@ class Database:
                 await cursor.execute("DELETE FROM autojoin WHERE server_id = %s", (server_id,))
                 await conn.commit()
 
-    async def set_voice_settings(self, server_id: int, user_id: int, voice_name: str, speed: int):
+    async def set_voice_settings(self, server_id: int, user_id: int, voice_name: str, speed: int, engine: str = "aquestalk"):
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute("""
-                    INSERT INTO voice_settings (server_id, user_id, voice_name, speed)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO voice_settings (server_id, user_id, voice_name, speed, engine)
+                    VALUES (%s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE 
                     voice_name = %s,
-                    speed = %s
-                """, (server_id, user_id, voice_name, speed, voice_name, speed))
+                    speed = %s,
+                    engine = %s
+                """, (server_id, user_id, voice_name, speed, engine, voice_name, speed, engine))
                 await conn.commit()
 
-    async def get_voice_settings(self, server_id: int, user_id: int) -> tuple[str, int] | None:
+    async def get_voice_settings(self, server_id: int, user_id: int) -> tuple[str, int, str] | None:
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute("""
-                    SELECT voice_name, speed 
+                    SELECT voice_name, speed, engine 
                     FROM voice_settings 
                     WHERE server_id = %s AND user_id = %s
                 """, (server_id, user_id))

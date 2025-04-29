@@ -11,7 +11,7 @@ def load_voice_characters() -> list[dict]:
     try:
         with open('voice_character.json', 'r', encoding='utf-8') as f:
             data = json.load(f)
-            return data['AquesTalk1']['voices']
+            return data
     except Exception:
         logger.error("音声キャラクターの設定を読み込めませんでした")
         return []
@@ -128,19 +128,22 @@ def setup_commands(tree: app_commands.CommandTree):
         await interaction.response.send_message(f"現在の自動参加設定:\n"f"ボイスチャンネル: {voice_channel.name}\n"f"テキストチャンネル: {text_channel.name}",)
 
     voice_characters = load_voice_characters()
-    voice_choices = [
-        app_commands.Choice(name=voice["name"], value=voice["value"])
-        for voice in voice_characters
-    ]
 
     @tree.command(name='setvoice', description='ボイスキャラクターと読み上げ速度を設定します')
     @app_commands.describe(
+        engine='音声エンジンの選択',
         voice='声の指定',
         speed='読み上げ速度（デフォルト: 100）'
     )
-    @app_commands.choices(voice=voice_choices)
+    @app_commands.choices(
+        engine=[
+            app_commands.Choice(name='AquesTalk1', value='aquestalk'),
+            app_commands.Choice(name='VOICEVOX', value='voicevox')
+        ]
+    )
     async def setvoice(
         interaction: discord.Interaction,
+        engine: str,
         voice: str,
         speed: int = 100
     ):
@@ -150,12 +153,62 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message('速度は50から200の間で指定してください。', ephemeral=True)
             return
 
+        if engine == 'aquestalk':
+            valid_voices = [v['value'] for v in voice_characters['AquesTalk1']]
+            if voice not in valid_voices:
+                await interaction.response.send_message('無効なAquesTalk1の音声が指定されました。', ephemeral=True)
+                return
+        else:
+            valid_voices = [v['value'] for v in voice_characters['voicevox']]
+            if voice not in valid_voices:
+                await interaction.response.send_message('無効なVOICEVOXの音声が指定されました。', ephemeral=True)
+                return
+
         try:
-            await db.set_voice_settings(interaction.guild_id, interaction.user.id, voice, speed)
-            await update_voice_settings(interaction.guild_id, interaction.user.id, voice, speed)
-            await interaction.response.send_message(f"ボイス設定を更新しました。\n"f"キャラクター: {voice}\n"f"速度: {speed}")
+            await db.set_voice_settings(interaction.guild_id, interaction.user.id, voice, speed, engine)
+            await update_voice_settings(interaction.guild_id, interaction.user.id, voice, speed, engine)
+
+            voice_name = ""
+            if engine == "aquestalk":
+                for v in voice_characters['AquesTalk1']:
+                    if v['value'] == voice:
+                        voice_name = v['name']
+                        break
+            else:
+                for v in voice_characters['voicevox']:
+                    if v['value'] == voice:
+                        voice_name = v['name']
+                        break
+
+            await interaction.response.send_message(
+                f"ボイス設定を更新しました。\n"
+                f"エンジン: {engine}\n"
+                f"キャラクター: {voice_name}\n"
+                f"速度: {speed}"
+            )
         except Exception as e:
             await interaction.response.send_message(f"設定の更新に失敗しました: {str(e)}")
+
+    @setvoice.autocomplete('voice')
+    async def voice_autocomplete(
+        interaction: discord.Interaction,
+        current: str,
+    ) -> list[app_commands.Choice[str]]:
+        engine = interaction.namespace.engine
+        if not engine:
+            return []
+
+        if engine == 'aquestalk':
+            voices = voice_characters['AquesTalk1']
+        else:
+            voices = voice_characters['voicevox']
+
+        choices = [
+            app_commands.Choice(name=voice['name'], value=voice['value'])
+            for voice in voices
+            if current.lower() in voice['name'].lower()
+        ]
+        return choices[:25]
 
     @tree.command(name='skip', description='現在の読み上げを停止します')
     async def skip(interaction: discord.Interaction):

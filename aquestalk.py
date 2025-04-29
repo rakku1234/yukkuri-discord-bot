@@ -11,7 +11,7 @@ class AquesTalk1:
         self.temp_file = None
         self.aquestalk = None
 
-    def _init_aquestalk(self):
+    def init(self):
         system = platform.system().lower()
         if system == 'windows':
             lib_name = 'AquesTalk.dll'
@@ -28,10 +28,9 @@ class AquesTalk1:
         self.aquestalk.AquesTalk_FreeWave.argtypes = [ctypes.POINTER(ctypes.c_ubyte)]
         self.aquestalk.AquesTalk_FreeWave.restype = None
 
-    # 音声合成
     def get_audio(self):
         if self.aquestalk is None:
-            self._init_aquestalk()
+            self.init()
 
         text_utf8 = self.text.encode('utf-8')
         size = ctypes.c_int(0)

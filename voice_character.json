@@ -1,14 +1,30 @@
 {
-    "AquesTalk1": {
-        "voices": [
-            {"name": "女声1", "value": "f1"},
-            {"name": "女声2", "value": "f2"},
-            {"name": "男声1", "value": "m1"},
-            {"name": "男声2", "value": "m2"},
-            {"name": "中性", "value": "imd1"},
-            {"name": "機械1", "value": "jgr"},
-            {"name": "機械2", "value": "dvd"},
-            {"name": "ロボット", "value": "r1"}
-        ]
-    }
+    "AquesTalk1": [
+        {"name": "女声1", "value": "f1"},
+        {"name": "女声2", "value": "f2"},
+        {"name": "男声1", "value": "m1"},
+        {"name": "男声2", "value": "m2"},
+        {"name": "中性", "value": "imd1"},
+        {"name": "機械1", "value": "jgr"},
+        {"name": "機械2", "value": "dvd"},
+        {"name": "ロボット", "value": "r1"}
+    ],
+    "voicevox": [
+        {"name": "四国めたん", "value": "0"},
+        {"name": "ずんだもん", "value": "4"},
+        {"name": "春日部つむぎ", "value": "8"},
+        {"name": "波音リツ", "value": "9"},
+        {"name": "青山龍星", "value": "13"},
+        {"name": "冥鳴ひまり", "value": "14"},
+        {"name": "九州そら", "value": "15"},
+        {"name": "もち子さん", "value": "20"},
+        {"name": "剣崎雌雄", "value": "21"},
+        {"name": "白上虎太郎", "value": "12"},
+        {"name": "ちび式じい", "value": "42"},
+        {"name": "櫻歌ミコ", "value": "43"},
+        {"name": "小夜", "value": "46"},
+        {"name": "満別花丸", "value": "69"},
+        {"name": "琴詠ニア", "value": "74"},
+        {"name": "中部つるぎ", "value": "94"}
+    ]
 }
