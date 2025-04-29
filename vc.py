@@ -24,10 +24,10 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
     try:
         if engine == "voicevox":
             audio = Voicevox(text, int(voice_name))
+            audio_file = await audio.get_audio()
         else:
             audio = AquesTalk1(text, speed, voice_name)
-
-        audio_file = audio.get_audio()
+            audio_file = audio.get_audio()
 
         if audio_file is None:
             return False
