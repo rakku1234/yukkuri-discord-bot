@@ -4,6 +4,7 @@ from discord_cmd import setup_commands
 from vc import read_message, db
 from config import load_config
 from loguru import logger
+from voicevox import Voicevox
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -16,6 +17,11 @@ async def on_ready():
     logger.info(f"{client.user} としてログインしました")
 
     await db.connect()
+
+    try:
+        await Voicevox.initialize()
+    except Exception as e:
+        logger.error(f"Voicevoxの初期化に失敗しました: {e}")
 
     setup_commands(tree)
     await tree.sync()

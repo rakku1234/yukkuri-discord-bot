@@ -49,6 +49,14 @@ class Voicevox:
             Voicevox._instance = self
 
     @classmethod
+    async def initialize(cls):
+        if cls._instance is None:
+            cls._instance = cls('', 0)
+        await cls._instance.init()
+        cls._initialized = True
+        logger.success("Voicevoxの初期化に成功しました")
+
+    @classmethod
     async def ensure_initialized(cls):
         if not cls._initialized and not cls._initializing:
             async with cls._init_lock:
