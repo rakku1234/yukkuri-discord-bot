@@ -21,7 +21,7 @@ async def ensure_db_connection():
         await db.connect()
 
 def setup_commands(tree: app_commands.CommandTree):
-    @tree.command(name='join', description='ボイスチャンネルに参加し、テキストチャンネルのメッセージを読み上げます')
+    @tree.command(name='join', description='ボイスチャンネルに参加')
     async def join(interaction: discord.Interaction):
         await ensure_db_connection()
 
@@ -38,7 +38,7 @@ def setup_commands(tree: app_commands.CommandTree):
         except discord.ClientException:
             await interaction.response.send_message('すでにボイスチャンネルに接続しています。', ephemeral=True)
 
-    @tree.command(name='leave', description='ボイスチャンネルから退出し、読み上げを停止します')
+    @tree.command(name='leave', description='ボイスチャンネルから退出')
     async def leave(interaction: discord.Interaction):
         await ensure_db_connection()
 
