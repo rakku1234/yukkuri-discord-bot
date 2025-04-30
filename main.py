@@ -19,7 +19,7 @@ async def on_ready():
     await db.connect()
 
     try:
-        await Voicevox.initialize()
+        await Voicevox.init()
     except Exception as e:
         logger.error(f"Voicevoxの初期化に失敗しました: {e}")
 

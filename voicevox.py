@@ -1,6 +1,5 @@
 import asyncio
 import dataclasses
-import multiprocessing
 import os
 import tempfile
 import platform
@@ -38,66 +37,58 @@ class Voicevox:
     _initialized = False
     _initializing = False
     _init_lock = asyncio.Lock()
+    _model_loaded = set()
 
-    def __init__(self, text, style_id=0, config=None):
+    def __init__(self, text, style_id=0):
         self.text = text
         self.style_id = int(style_id)
-        self.config = config or VoicevoxConfig.get_default_config()
+        self.config = VoicevoxConfig.get_default_config()
         self.temp_file = None
 
         if Voicevox._instance is None:
             Voicevox._instance = self
 
     @classmethod
-    async def initialize(cls):
+    async def init(cls):
         if cls._instance is None:
             cls._instance = cls('', 0)
-        await cls._instance.init()
-        cls._initialized = True
-        logger.success("Voicevoxの初期化に成功しました")
 
-    @classmethod
-    async def ensure_initialized(cls):
-        if not cls._initialized and not cls._initializing:
-            async with cls._init_lock:
-                if not cls._initialized and not cls._initializing:
-                    cls._initializing = True
-                    try:
-                        await cls._instance.init()
-                        cls._initialized = True
-                    finally:
-                        cls._initializing = False
+        async with cls._init_lock:
+            if not cls._initialized and not cls._initializing:
+                cls._initializing = True
+                try:
+                    if cls._synthesizer is None:
+                        onnxruntime = await Onnxruntime.load_once(filename=cls._instance.config.onnxruntime_path)
+                        open_jtalk = await OpenJtalk.new(cls._instance.config.dict_dir)
 
-    async def init(self):
-        try:
-            onnxruntime = await Onnxruntime.load_once(filename=self.config.onnxruntime_path)
-            open_jtalk = await OpenJtalk.new(self.config.dict_dir)
+                        cls._synthesizer = Synthesizer(onnxruntime, open_jtalk)
 
-            Voicevox._synthesizer = Synthesizer(
-                onnxruntime,
-                open_jtalk,
-                cpu_num_threads=max(multiprocessing.cpu_count(), 2)
-            )
+                    cls._model_loaded.clear()
+                    model_count = 0
+                    for model_file in Path(cls._instance.config.vvm_path).glob("*.vvm"):
+                        try:
+                            model_id = model_file.stem
+                            if model_id not in cls._model_loaded:
+                                async with await VoiceModelFile.open(model_file) as model:
+                                    await cls._synthesizer.load_voice_model(model)
+                                cls._model_loaded.add(model_id)
+                                model_count += 1
+                        except Exception as e:
+                            logger.warning(f"モデル {model_file.name} の読み込みに失敗しました: {e}")
+                            continue
 
-            model_count = 0
-            for model_file in Path(self.config.vvm_path).glob("*.vvm"):
-                async with await VoiceModelFile.open(model_file) as model:
-                    await Voicevox._synthesizer.load_voice_model(model)
-                model_count += 1
-
-        except Exception:
-            Voicevox._synthesizer = None
-            Voicevox._initialized = False
-            raise
+                    cls._initialized = True
+                    logger.success("Voicevoxの初期化に成功しました")
+                finally:
+                    cls._initializing = False
 
     async def get_audio(self):
         try:
-            await Voicevox.ensure_initialized()
+            await Voicevox.init()
             if Voicevox._synthesizer is None:
                 raise RuntimeError("シンセサイザーが初期化されていません")
 
-            audio_query = await Voicevox._synthesizer.create_audio_query(self.text, self.style_id)
-            wav = await Voicevox._synthesizer.synthesis(audio_query, self.style_id)
+            wav = await Voicevox._synthesizer.tts(self.text, self.style_id)
 
             with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp:
                 self.temp_file = temp.name
@@ -115,3 +106,4 @@ class Voicevox:
     #    cls._synthesizer = None
     #    cls._initialized = False
     #    cls._initializing = False
+    #    Voicevox._model_loaded.clear()
