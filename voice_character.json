@@ -9,6 +9,22 @@
         {"name": "機械2", "value": "dvd"},
         {"name": "ロボット", "value": "r1"}
     ],
+    "AquesTalk2": [
+        {"name": "F1C女声", "value": "aq_f1c"},
+        {"name": "F3A女声", "value": "aq_f3a"},
+        {"name": "huskey", "value": "aq_huskey"},
+        {"name": "M4B男声", "value": "aq_m4b"},
+        {"name": "MF1中性的", "value": "aq_mf1"},
+        {"name": "RB2ロボット", "value": "aq_rb2"},
+        {"name": "RB3ロボット", "value": "aq_rb3"},
+        {"name": "RM女声", "value": "aq_rm"},
+        {"name": "ROBOロボット", "value": "aq_robo"},
+        {"name": "yukkuri", "value": "aq_yukkuri"},
+        {"name": "F4女声", "value": "ar_f4"},
+        {"name": "M5男声", "value": "ar_m5"},
+        {"name": "MF2機械声", "value": "ar_mf2"},
+        {"name": "RM3女声", "value": "ar_rm3"}
+    ],
     "voicevox": [
         {"name": "四国めたん", "value": "0"},
         {"name": "ずんだもん", "value": "4"},

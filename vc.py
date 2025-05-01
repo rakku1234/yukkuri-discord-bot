@@ -7,7 +7,7 @@ from collections import defaultdict
 from database import Database
 from text_to_speech import convert_text_to_speech
 from loguru import logger
-from aquestalk import AquesTalk1
+from aquestalk import AquesTalk1, AquesTalk2
 from voicevox import Voicevox
 
 current_voice_settings = {}
@@ -17,17 +17,20 @@ reading_tasks = {}
 with open('voice_character.json', 'r', encoding='utf-8') as f:
     voice_characters = json.load(f)
 
-async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, voice_name: str = "f1", speed: int = 100, engine: str = "aquestalk"):
+async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, voice_name: str, speed: int, engine: str):
     if not voice_client or not voice_client.is_connected():
         return False
 
     try:
-        if engine == "voicevox":
-            audio = Voicevox(text, int(voice_name))
-            audio_file = await audio.get_audio()
-        else:
-            audio = AquesTalk1(text, speed, voice_name)
-            audio_file = audio.get_audio()
+        match engine:
+            case "voicevox":
+                audio = Voicevox(text, int(voice_name))
+            case "aquestalk1":
+                audio = AquesTalk1(text, speed, voice_name)
+            case "aquestalk2":
+                audio = AquesTalk2(text, speed, voice_name)
+
+        audio_file = await audio.get_audio()
 
         if audio_file is None:
             return False
@@ -49,7 +52,6 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
 
 db = Database()
 
-# メッセージキューを処理する関数
 async def process_message_queue(guild_id: int):
     while True:
         try:
@@ -66,7 +68,6 @@ async def process_message_queue(guild_id: int):
             logger.error(f"メッセージキュー処理エラー: {e}")
             continue
 
-# メッセージを読み上げる関数
 async def read_message(message_or_text, guild=None, author=None, channel=None):
     if isinstance(message_or_text, str):
         text = message_or_text
@@ -100,9 +101,9 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
         if voice_settings:
             current_voice_settings[(guild.id, author.id)] = voice_settings
 
-    voice_name = "f1"
+    voice_name = "2"
     speed = 100
-    engine = "aquestalk"
+    engine = "voicevox"
 
     if voice_settings:
         voice_name, speed, engine = voice_settings
@@ -124,7 +125,7 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
 
     text = re.sub(r'<:[a-zA-Z0-9_]+:[0-9]+>', '', text)
 
-    if engine == "aquestalk":
+    if engine.startswith("aquestalk"):
         text = convert_text_to_speech(text)
 
     await message_queues[guild.id].put((text, voice_name, speed, voice_client, engine))
@@ -132,5 +133,5 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
     if guild.id not in reading_tasks or reading_tasks[guild.id].done():
         reading_tasks[guild.id] = asyncio.create_task(process_message_queue(guild.id))
 
-async def update_voice_settings(guild_id: int, user_id: int, voice_name: str, speed: int = 100, engine: str = "aquestalk"):
+async def update_voice_settings(guild_id: int, user_id: int, voice_name: str, speed: int, engine: str):
     current_voice_settings[(guild_id, user_id)] = (voice_name, speed, engine)

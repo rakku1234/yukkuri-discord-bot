@@ -137,7 +137,8 @@ def setup_commands(tree: app_commands.CommandTree):
     )
     @app_commands.choices(
         engine=[
-            app_commands.Choice(name='AquesTalk1', value='aquestalk'),
+            app_commands.Choice(name='AquesTalk1', value='aquestalk1'),
+            app_commands.Choice(name='AquesTalk2', value='aquestalk2'),
             app_commands.Choice(name='VOICEVOX', value='voicevox')
         ]
     )
@@ -153,32 +154,44 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message('速度は50から200の間で指定してください。', ephemeral=True)
             return
 
-        if engine == 'aquestalk':
-            valid_voices = [v['value'] for v in voice_characters['AquesTalk1']]
-            if voice not in valid_voices:
-                await interaction.response.send_message('無効なAquesTalk1の音声が指定されました。', ephemeral=True)
-                return
-        else:
-            valid_voices = [v['value'] for v in voice_characters['voicevox']]
-            if voice not in valid_voices:
-                await interaction.response.send_message('無効なVOICEVOXの音声が指定されました。', ephemeral=True)
-                return
+        match engine:
+            case 'aquestalk1':
+                valid_voices = [v['value'] for v in voice_characters['AquesTalk1']]
+                if voice not in valid_voices:
+                    await interaction.response.send_message('無効なAquesTalk1の音声が指定されました。', ephemeral=True)
+                    return
+            case 'aquestalk2':
+                valid_voices = [v['value'] for v in voice_characters['AquesTalk2']]
+                if voice not in valid_voices:
+                    await interaction.response.send_message('無効なAquesTalk2の音声が指定されました。', ephemeral=True)
+                    return
+            case 'voicevox':
+                valid_voices = [v['value'] for v in voice_characters['voicevox']]
+                if voice not in valid_voices:
+                    await interaction.response.send_message('無効なVOICEVOXの音声が指定されました。', ephemeral=True)
+                    return
 
         try:
             await db.set_voice_settings(interaction.guild_id, interaction.user.id, voice, speed, engine)
             await update_voice_settings(interaction.guild_id, interaction.user.id, voice, speed, engine)
 
-            voice_name = ""
-            if engine == "aquestalk":
-                for v in voice_characters['AquesTalk1']:
-                    if v['value'] == voice:
-                        voice_name = v['name']
-                        break
-            else:
-                for v in voice_characters['voicevox']:
-                    if v['value'] == voice:
-                        voice_name = v['name']
-                        break
+            voice_name = ''
+            match engine:
+                case 'aquestalk1':
+                    for v in voice_characters['AquesTalk1']:
+                        if v['value'] == voice:
+                            voice_name = v['name']
+                            break
+                case 'aquestalk2':
+                    for v in voice_characters['AquesTalk2']:
+                        if v['value'] == voice:
+                            voice_name = v['name']
+                            break
+                case 'voicevox':
+                    for v in voice_characters['voicevox']:
+                        if v['value'] == voice:
+                            voice_name = v['name']
+                            break
 
             await interaction.response.send_message(
                 f"ボイス設定を更新しました。\n"
@@ -198,10 +211,13 @@ def setup_commands(tree: app_commands.CommandTree):
         if not engine:
             return []
 
-        if engine == 'aquestalk':
-            voices = voice_characters['AquesTalk1']
-        else:
-            voices = voice_characters['voicevox']
+        match engine:
+            case 'aquestalk1':
+                voices = voice_characters['AquesTalk1']
+            case 'aquestalk2':
+                voices = voice_characters['AquesTalk2']
+            case 'voicevox':
+                voices = voice_characters['voicevox']
 
         choices = [
             app_commands.Choice(name=voice['name'], value=voice['value'])

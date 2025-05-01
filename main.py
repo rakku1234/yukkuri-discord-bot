@@ -18,13 +18,13 @@ async def on_ready():
 
     await db.connect()
 
+    setup_commands(tree)
+    await tree.sync()
+
     try:
         await Voicevox.init()
     except Exception as e:
         logger.error(f"Voicevoxの初期化に失敗しました: {e}")
-
-    setup_commands(tree)
-    await tree.sync()
 
 @client.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):

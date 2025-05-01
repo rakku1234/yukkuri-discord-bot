@@ -55,7 +55,7 @@ class Database:
                     user_id INTEGER,
                     voice_name TEXT NOT NULL,
                     speed INTEGER NOT NULL DEFAULT 100,
-                    engine TEXT NOT NULL DEFAULT 'aquestalk',
+                    engine TEXT NOT NULL DEFAULT 'voicevox',
                     PRIMARY KEY (server_id, user_id)
                 )
             """)
@@ -121,7 +121,7 @@ class Database:
                             user_id BIGINT,
                             voice_name VARCHAR(255) NOT NULL,
                             speed INT NOT NULL DEFAULT 100,
-                            engine VARCHAR(50) NOT NULL DEFAULT 'aquestalk',
+                            engine VARCHAR(50) NOT NULL DEFAULT 'voicevox',
                             PRIMARY KEY (server_id, user_id)
                         )
                     """)
@@ -239,7 +239,7 @@ class Database:
                     await cursor.execute("DELETE FROM autojoin WHERE server_id = %s", (server_id,))
                     await conn.commit()
 
-    async def set_voice_settings(self, server_id: int, user_id: int, voice_name: str, speed: int, engine: str = "aquestalk"):
+    async def set_voice_settings(self, server_id: int, user_id: int, voice_name: str, speed: int, engine: str):
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("""
