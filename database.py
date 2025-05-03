@@ -1,6 +1,6 @@
 import aiomysql
 import aiosqlite
-from typing import Dict
+from typing import Dict, Tuple
 from config import load_config
 
 class Database:
@@ -37,6 +37,7 @@ class Database:
             await cursor.execute("""
                 CREATE TABLE IF NOT EXISTS read_channels (
                     server_id INTEGER PRIMARY KEY,
+                    voice_channel INTEGER NOT NULL,
                     chat_channel INTEGER NOT NULL
                 )
             """)
@@ -85,6 +86,7 @@ class Database:
                     await cursor.execute("""
                         CREATE TABLE read_channels (
                             server_id BIGINT PRIMARY KEY,
+                            voice_channel BIGINT NOT NULL,
                             chat_channel BIGINT NOT NULL
                         )
                     """)
@@ -145,35 +147,37 @@ class Database:
                     """)
                 await conn.commit()
 
-    async def get_read_channels(self) -> Dict[int, int]:
+    async def get_read_channels(self) -> Dict[int, Tuple[int, int]]:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
-                await cursor.execute("SELECT server_id, chat_channel FROM read_channels")
+                await cursor.execute("SELECT server_id, voice_channel, chat_channel FROM read_channels")
                 rows = await cursor.fetchall()
-                return {row[0]: row[1] for row in rows}
+                return {row[0]: (row[1], row[2]) for row in rows}
         else:
             async with self.pool.acquire() as conn:
                 async with conn.cursor() as cursor:
-                    await cursor.execute("SELECT server_id, chat_channel FROM read_channels")
+                    await cursor.execute("SELECT server_id, voice_channel, chat_channel FROM read_channels")
                     rows = await cursor.fetchall()
-                    return {row[0]: row[1] for row in rows}
+                    return {row[0]: (row[1], row[2]) for row in rows}
 
-    async def set_read_channel(self, server_id: int, chat_channel: int):
+    async def set_read_channel(self, server_id: int, voice_channel: int, chat_channel: int):
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("""
-                    INSERT OR REPLACE INTO read_channels (server_id, chat_channel)
-                    VALUES (?, ?)
-                """, (server_id, chat_channel))
+                    INSERT OR REPLACE INTO read_channels (server_id, voice_channel, chat_channel)
+                    VALUES (?, ?, ?)
+                """, (server_id, voice_channel, chat_channel))
                 await self.connection.commit()
         else:
             async with self.pool.acquire() as conn:
                 async with conn.cursor() as cursor:
                     await cursor.execute("""
-                        INSERT INTO read_channels (server_id, chat_channel)
-                        VALUES (%s, %s)
-                        ON DUPLICATE KEY UPDATE chat_channel = %s
-                    """, (server_id, chat_channel, chat_channel))
+                        INSERT INTO read_channels (server_id, voice_channel, chat_channel)
+                        VALUES (%s, %s, %s)
+                        ON DUPLICATE KEY UPDATE 
+                        voice_channel = %s,
+                        chat_channel = %s
+                    """, (server_id, voice_channel, chat_channel, voice_channel, chat_channel))
                     await conn.commit()
 
     async def remove_read_channel(self, server_id: int):

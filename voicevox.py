@@ -1,7 +1,7 @@
 import asyncio
 import dataclasses
 import os
-import tempfile
+import aiofiles
 import platform
 from pathlib import Path
 from loguru import logger
@@ -18,18 +18,15 @@ class VoicevoxConfig:
     @staticmethod
     def get_default_config():
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        if VoicevoxConfig.system == 'windows':
-            onnxruntime_path = os.path.join(base_dir, 'voicevox', 'onnxruntime', 'lib', 'voicevox_onnxruntime.dll')
-        elif VoicevoxConfig.system == 'linux':
-            onnxruntime_path = os.path.join(base_dir, 'voicevox', 'onnxruntime', 'lib', 'libvoicevox_onnxruntime.so')
-        else:
-            raise RuntimeError("サポートされていないオペレーティングシステムです")
+        match VoicevoxConfig.system:
+            case 'windows':
+                onnxruntime_path = os.path.join(base_dir, 'voicevox', 'onnxruntime', 'lib', 'voicevox_onnxruntime.dll')
+            case 'linux':
+                onnxruntime_path = os.path.join(base_dir, 'voicevox', 'onnxruntime', 'lib', 'libvoicevox_onnxruntime.so')
+            case _:
+                raise RuntimeError("サポートされていないオペレーティングシステムです")
 
-        return VoicevoxConfig(
-            vvm_path=os.path.join(base_dir, 'voicevox', 'models', 'vvms'),
-            onnxruntime_path=onnxruntime_path,
-            dict_dir=os.path.join(base_dir, 'voicevox', 'dict', 'open_jtalk_dic_utf'),
-        )
+        return VoicevoxConfig(os.path.join(base_dir, 'voicevox', 'models', 'vvms'), onnxruntime_path, os.path.join(base_dir, 'voicevox', 'dict', 'open_jtalk_dic_utf'))
 
 class Voicevox:
     _instance = None
@@ -90,15 +87,14 @@ class Voicevox:
 
             wav = await Voicevox._synthesizer.tts(self.text, self.style_id)
 
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp:
+            async with aiofiles.tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp:
                 self.temp_file = temp.name
-                temp.write(wav)
+                await temp.write(wav)
 
             return self.temp_file
 
         except Exception as e:
-            logger.error(f"音声合成中にエラーが発生: {e}")
-            raise
+            raise RuntimeError(e)
 
     #@classmethod
     #def cleanup(cls):

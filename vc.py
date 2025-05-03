@@ -14,7 +14,7 @@ current_voice_settings = {}
 message_queues = defaultdict(asyncio.Queue)
 reading_tasks = {}
 
-with open('voice_character.json', 'r', encoding='utf-8') as f:
+with open('voice_character.json', encoding='utf-8') as f:
     voice_characters = json.load(f)
 
 async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, voice_name: str, speed: int, engine: str):
@@ -29,6 +29,8 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
                 audio = AquesTalk1(text, speed, voice_name)
             case "aquestalk2":
                 audio = AquesTalk2(text, speed, voice_name)
+            case _:
+                raise ValueError(f"無効なエンジン: {engine}")
 
         audio_file = await audio.get_audio()
 
@@ -42,6 +44,9 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
             else:
                 future.set_result(None)
             os.unlink(audio_file)
+
+        while voice_client.is_playing():
+            await asyncio.sleep(0.1)
 
         voice_client.play(discord.FFmpegPCMAudio(audio_file), after=after_playing)
         await future

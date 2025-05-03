@@ -1,7 +1,6 @@
 import ctypes
 import os
 import platform
-from loguru import logger
 
 def convert_text_to_speech(text: str) -> str:
     system = platform.system().lower()
@@ -9,14 +8,15 @@ def convert_text_to_speech(text: str) -> str:
     dll_dir = os.path.join(base_dir, 'AqKanji2Koe', 'lib')
     dic_dir = os.path.join(base_dir, 'AqKanji2Koe', 'aq_dic')
 
-    if system == 'windows':
-        kanji2koe_lib = os.path.join(dll_dir, 'AqKanji2Koe.dll')
-        aq_kanji2koe = ctypes.WinDLL(kanji2koe_lib)
-    elif system == 'linux':
-        kanji2koe_lib = os.path.join(dll_dir, 'libAqKanji2Koe.so')
-        aq_kanji2koe = ctypes.CDLL(kanji2koe_lib)
-    else:
-        raise OSError(f"サポートされていないプラットフォームです: {system}")
+    match system:
+        case 'windows':
+            kanji2koe_lib = os.path.join(dll_dir, 'AqKanji2Koe.dll')
+            aq_kanji2koe = ctypes.WinDLL(kanji2koe_lib)
+        case 'linux':
+            kanji2koe_lib = os.path.join(dll_dir, 'libAqKanji2Koe.so')
+            aq_kanji2koe = ctypes.CDLL(kanji2koe_lib)
+        case _:
+            raise OSError(f"サポートされていないプラットフォームです")
 
     aq_kanji2koe.AqKanji2Koe_Create.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int)]
     aq_kanji2koe.AqKanji2Koe_Create.restype = ctypes.c_void_p
@@ -57,4 +57,4 @@ def convert_text_to_speech(text: str) -> str:
                 instance_ptr = ctypes.c_void_p(instance)
                 aq_kanji2koe.AqKanji2Koe_Release(instance_ptr)
             except Exception as e:
-                logger.error(f"AqKanji2Koe_Releaseでエラーが発生しました: {e}")
+                raise Exception(f"開放時にエラーが発生しました: {e}")

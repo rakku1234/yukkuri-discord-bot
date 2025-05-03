@@ -9,7 +9,7 @@ db = Database()
 
 def load_voice_characters() -> list[dict]:
     try:
-        with open('voice_character.json', 'r', encoding='utf-8') as f:
+        with open('voice_character.json', encoding='utf-8') as f:
             data = json.load(f)
             return data
     except Exception:
@@ -34,7 +34,7 @@ def setup_commands(tree: app_commands.CommandTree):
             await voice_channel.connect(self_deaf=True)
             await interaction.response.send_message(f"{voice_channel.name}に参加しました！このチャンネルのメッセージを読み上げます。")
 
-            await db.set_read_channel(interaction.guild_id, interaction.channel_id)
+            await db.set_read_channel(interaction.guild_id, voice_channel.id, interaction.channel_id)
         except discord.ClientException:
             await interaction.response.send_message('すでにボイスチャンネルに接続しています。', ephemeral=True)
 
@@ -61,32 +61,14 @@ def setup_commands(tree: app_commands.CommandTree):
         except discord.ClientException:
             await interaction.response.send_message('ボイスチャンネルから退出できませんでした。', ephemeral=True)
 
-    @tree.command(name='get_read_channels', description='読み上げ対象のチャンネルを取得します')
-    async def get_read_channels(interaction: discord.Interaction):
-        await ensure_db_connection()
+    autojoin_group = app_commands.Group(name='autojoin', description='自動参加機能の設定')
 
-        channels = await db.get_read_channels()
-
-        if not channels:
-            await interaction.response.send_message('読み上げ対象のチャンネルはありません。', ephemeral=True)
-            return
-
-        message = "読み上げ対象のチャンネル:\n"
-        for server_id, chat_channel in channels.items():
-            server = interaction.client.get_guild(server_id)
-            if server:
-                channel = server.get_channel(chat_channel)
-                if channel:
-                    message += f"- {server.name}: {channel.name}\n"
-
-        await interaction.response.send_message(message, ephemeral=True)
-
-    @tree.command(name='autojoin', description='自動参加するボイスチャンネルと読み上げるテキストチャンネルを設定します')
+    @autojoin_group.command(name='add', description='自動参加するボイスチャンネルと読み上げるテキストチャンネルを設定します')
     @app_commands.describe(
         voice='参加するボイスチャンネル',
         text='読み上げるテキストチャンネル'
     )
-    async def autojoin(
+    async def autojoin_add(
         interaction: discord.Interaction,
         voice: discord.VoiceChannel,
         text: discord.TextChannel
@@ -99,8 +81,8 @@ def setup_commands(tree: app_commands.CommandTree):
         except Exception as e:
             await interaction.response.send_message(f"設定の更新に失敗しました: {str(e)}")
 
-    @tree.command(name='remove_autojoin', description='自動参加設定を削除します')
-    async def remove_autojoin(interaction: discord.Interaction):
+    @autojoin_group.command(name='remove', description='自動参加設定を削除します')
+    async def autojoin_remove(interaction: discord.Interaction):
         await ensure_db_connection()
 
         try:
@@ -109,8 +91,8 @@ def setup_commands(tree: app_commands.CommandTree):
         except Exception as e:
             await interaction.response.send_message(f"設定の削除に失敗しました: {str(e)}")
 
-    @tree.command(name='get_autojoin', description='現在の自動参加設定を表示します')
-    async def get_autojoin(interaction: discord.Interaction):
+    @autojoin_group.command(name='get', description='現在の自動参加設定を表示します')
+    async def autojoin_get(interaction: discord.Interaction):
         await ensure_db_connection()
 
         autojoin = await db.get_autojoin(interaction.guild_id)
@@ -126,6 +108,8 @@ def setup_commands(tree: app_commands.CommandTree):
             return
 
         await interaction.response.send_message(f"現在の自動参加設定:\n"f"ボイスチャンネル: {voice_channel.name}\n"f"テキストチャンネル: {text_channel.name}",)
+
+    tree.add_command(autojoin_group)
 
     voice_characters = load_voice_characters()
 
