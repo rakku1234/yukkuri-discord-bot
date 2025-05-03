@@ -19,7 +19,7 @@ class AquesTalk1:
             case 'linux':
                 lib_name = 'libAquesTalk.so'
             case _:
-                raise OSError(f"サポートされていないプラットフォームです")
+                raise OSError('サポートされていないプラットフォームです')
 
         lib_path = os.path.join(os.path.dirname(__file__), 'AquesTalk1', 'lib', self.voice_name, lib_name)
         self.aquestalk = ctypes.CDLL(lib_path)
@@ -38,7 +38,7 @@ class AquesTalk1:
         wav_data = self.aquestalk.AquesTalk_Synthe_Utf8(self.text.encode('utf-8'), self.speed, ctypes.byref(size))
 
         if wav_data is None:
-            raise RuntimeError("音声データの生成に失敗しました")
+            raise RuntimeError('音声データの生成に失敗しました')
 
         try:
             async with aiofiles.tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp:
@@ -67,7 +67,7 @@ class AquesTalk2:
             case 'linux':
                 lib_name = 'libAquesTalk2Eva.so'
             case _:
-                raise OSError(f"サポートされていないプラットフォームです: {system}")
+                raise OSError('サポートされていないプラットフォームです')
 
         lib_path = os.path.join(os.path.dirname(__file__), 'AquesTalk2', 'lib', lib_name)
         phont_file = os.path.join(os.path.dirname(__file__), 'AquesTalk2', 'phont', f"{self.voice_name}.phont")
@@ -98,7 +98,7 @@ class AquesTalk2:
         wav_data = self.aquestalk.AquesTalk2_Synthe_Utf8(self.text.encode('utf-8'), self.speed, ctypes.byref(size), self.phont_ptr)
 
         if wav_data is None:
-            raise RuntimeError("音声データの生成に失敗しました")
+            raise RuntimeError('音声データの生成に失敗しました')
 
         try:
             async with aiofiles.tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp:

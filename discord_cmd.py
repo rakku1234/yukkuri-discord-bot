@@ -13,7 +13,7 @@ def load_voice_characters() -> list[dict]:
             data = json.load(f)
             return data
     except Exception:
-        logger.error("音声キャラクターの設定を読み込めませんでした")
+        logger.error('音声キャラクターの設定を読み込めませんでした')
         return []
 
 async def ensure_db_connection():

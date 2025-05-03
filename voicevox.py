@@ -62,7 +62,7 @@ class Voicevox:
 
                     cls._model_loaded.clear()
                     model_count = 0
-                    for model_file in Path(cls._instance.config.vvm_path).glob("*.vvm"):
+                    for model_file in Path(cls._instance.config.vvm_path).glob('*.vvm'):
                         try:
                             model_id = model_file.stem
                             if model_id not in cls._model_loaded:
@@ -75,7 +75,7 @@ class Voicevox:
                             continue
 
                     cls._initialized = True
-                    logger.success("Voicevoxの初期化に成功しました")
+                    logger.success('Voicevoxの初期化に成功しました')
                 finally:
                     cls._initializing = False
 
@@ -83,7 +83,7 @@ class Voicevox:
         try:
             await Voicevox.init()
             if Voicevox._synthesizer is None:
-                raise RuntimeError("シンセサイザーが初期化されていません")
+                raise RuntimeError('シンセサイザーが初期化されていません')
 
             wav = await Voicevox._synthesizer.tts(self.text, self.style_id)
 
@@ -95,11 +95,3 @@ class Voicevox:
 
         except Exception as e:
             raise RuntimeError(e)
-
-    #@classmethod
-    #def cleanup(cls):
-    #    cls._instance = None
-    #    cls._synthesizer = None
-    #    cls._initialized = False
-    #    cls._initializing = False
-    #    Voicevox._model_loaded.clear()

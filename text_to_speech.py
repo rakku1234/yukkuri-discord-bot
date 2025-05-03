@@ -16,7 +16,7 @@ def convert_text_to_speech(text: str) -> str:
             kanji2koe_lib = os.path.join(dll_dir, 'libAqKanji2Koe.so')
             aq_kanji2koe = ctypes.CDLL(kanji2koe_lib)
         case _:
-            raise OSError(f"サポートされていないプラットフォームです")
+            raise OSError('サポートされていないプラットフォームです')
 
     aq_kanji2koe.AqKanji2Koe_Create.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int)]
     aq_kanji2koe.AqKanji2Koe_Create.restype = ctypes.c_void_p
@@ -32,9 +32,8 @@ def convert_text_to_speech(text: str) -> str:
                 ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int
             ]
             aq_kanji2koe.AqKanji2Koe_Convert_utf8.restype = ctypes.c_int
-            input_text = text.encode('utf-8')
             output_buffer = ctypes.create_string_buffer(4096)
-            result = aq_kanji2koe.AqKanji2Koe_Convert_utf8(instance, input_text, output_buffer, 4096)
+            result = aq_kanji2koe.AqKanji2Koe_Convert_utf8(instance, text.encode('utf-8'), output_buffer, 4096)
             if result == 0:
                 return output_buffer.value.decode('utf-8')
             else:
@@ -44,9 +43,8 @@ def convert_text_to_speech(text: str) -> str:
                 ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int
             ]
             aq_kanji2koe.AqKanji2Koe_Convert.restype = ctypes.c_int
-            input_text = text.encode('utf-8')
             output_buffer = ctypes.create_string_buffer(4096)
-            result = aq_kanji2koe.AqKanji2Koe_Convert(instance, input_text, output_buffer, 4096)
+            result = aq_kanji2koe.AqKanji2Koe_Convert(instance, text.encode('utf-8'), output_buffer, 4096)
             if result == 0:
                 return output_buffer.value.decode('utf-8')
             else:

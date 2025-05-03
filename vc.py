@@ -23,11 +23,11 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
 
     try:
         match engine:
-            case "voicevox":
+            case 'voicevox':
                 audio = Voicevox(text, int(voice_name))
-            case "aquestalk1":
+            case 'aquestalk1':
                 audio = AquesTalk1(text, speed, voice_name)
-            case "aquestalk2":
+            case 'aquestalk2':
                 audio = AquesTalk2(text, speed, voice_name)
             case _:
                 raise ValueError(f"無効なエンジン: {engine}")
@@ -106,9 +106,9 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
         if voice_settings:
             current_voice_settings[(guild.id, author.id)] = voice_settings
 
-    voice_name = "2"
+    voice_name = '2'
     speed = 100
-    engine = "voicevox"
+    engine = 'voicevox'
 
     if voice_settings:
         voice_name, speed, engine = voice_settings
@@ -130,7 +130,7 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
 
     text = re.sub(r'<:[a-zA-Z0-9_]+:[0-9]+>', '', text)
 
-    if engine.startswith("aquestalk"):
+    if engine.startswith('aquestalk'):
         text = convert_text_to_speech(text)
 
     await message_queues[guild.id].put((text, voice_name, speed, voice_client, engine))
