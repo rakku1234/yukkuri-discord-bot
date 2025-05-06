@@ -1,8 +1,16 @@
 import ctypes
 import os
 import platform
+from loguru import logger
+from config import load_config
+
+config = load_config()
+debug_mode = config['debug']
 
 def convert_text_to_speech(text: str) -> str:
+    if debug_mode:
+        logger.debug(f"テキスト変換を開始 - 入力テキスト: {text}")
+    
     system = platform.system().lower()
     base_dir = os.path.dirname(__file__)
     dll_dir = os.path.join(base_dir, 'AqKanji2Koe', 'lib')
@@ -24,7 +32,12 @@ def convert_text_to_speech(text: str) -> str:
     err_code = ctypes.c_int(0)
     instance = aq_kanji2koe.AqKanji2Koe_Create(dic_dir.encode('utf-8'), ctypes.byref(err_code))
     if not instance:
+        if debug_mode:
+            logger.debug(f"AqKanji2Koeインスタンスの作成に失敗 - エラーコード: {err_code.value}")
         raise Exception(f"AqKanji2Koeインスタンスの作成に失敗しました (エラーコード: {err_code.value})")
+
+    if debug_mode:
+        logger.debug('AqKanji2Koeインスタンスを作成しました')
 
     try:
         if system == 'windows':
@@ -35,8 +48,13 @@ def convert_text_to_speech(text: str) -> str:
             output_buffer = ctypes.create_string_buffer(4096)
             result = aq_kanji2koe.AqKanji2Koe_Convert_utf8(instance, text.encode('utf-8'), output_buffer, 4096)
             if result == 0:
-                return output_buffer.value.decode('utf-8')
+                converted_text = output_buffer.value.decode('utf-8')
+                if debug_mode:
+                    logger.debug(f"変換成功 - 出力テキスト: {converted_text}")
+                return converted_text
             else:
+                if debug_mode:
+                    logger.debug(f"変換に失敗 - エラーコード: {result}")
                 raise Exception(f"変換に失敗しました。エラーコード: {result}")
         elif system == 'linux':
             aq_kanji2koe.AqKanji2Koe_Convert.argtypes = [
@@ -46,13 +64,22 @@ def convert_text_to_speech(text: str) -> str:
             output_buffer = ctypes.create_string_buffer(4096)
             result = aq_kanji2koe.AqKanji2Koe_Convert(instance, text.encode('utf-8'), output_buffer, 4096)
             if result == 0:
-                return output_buffer.value.decode('utf-8')
+                converted_text = output_buffer.value.decode('utf-8')
+                if debug_mode:
+                    logger.debug(f"変換成功 - 出力テキスト: {converted_text}")
+                return converted_text
             else:
+                if debug_mode:
+                    logger.debug(f"変換に失敗 - エラーコード: {result}")
                 raise Exception(f"変換に失敗しました。エラーコード: {result}")
     finally:
         if instance:
             try:
                 instance_ptr = ctypes.c_void_p(instance)
                 aq_kanji2koe.AqKanji2Koe_Release(instance_ptr)
+                if debug_mode:
+                    logger.debug('インスタンスを解放しました')
             except Exception as e:
+                if debug_mode:
+                    logger.debug(f"インスタンスの解放に失敗 - エラー: {str(e)}")
                 raise Exception(f"開放時にエラーが発生しました: {e}")

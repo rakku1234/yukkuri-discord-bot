@@ -9,6 +9,10 @@ from text_to_speech import convert_text_to_speech
 from loguru import logger
 from aquestalk import AquesTalk1, AquesTalk2
 from voicevox import Voicevox
+from config import load_config
+
+config = load_config()
+debug_mode = config['debug']
 
 current_voice_settings = {}
 message_queues = defaultdict(asyncio.Queue)
@@ -18,7 +22,11 @@ with open('voice_character.json', encoding='utf-8') as f:
     voice_characters = json.load(f)
 
 async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, voice_name: str, speed: int, engine: str):
+    if debug_mode:
+        logger.debug(f"音声再生を開始 - テキスト: {text}, ボイス: {voice_name}, 速度: {speed}, エンジン: {engine}")
     if not voice_client or not voice_client.is_connected():
+        if debug_mode:
+            logger.debug('ボイスクライアントが接続されていません')
         return False
 
     try:
@@ -35,6 +43,8 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
         audio_file = await audio.get_audio()
 
         if audio_file is None:
+            if debug_mode:
+                logger.debug('音声ファイルの生成に失敗しました')
             return False
 
         future = asyncio.Future()
@@ -50,6 +60,8 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
 
         voice_client.play(discord.FFmpegPCMAudio(audio_file), after=after_playing)
         await future
+        if debug_mode:
+            logger.debug('音声再生が完了しました')
         return True
     except Exception as e:
         logger.error(f"音声合成エラー: {e}")
@@ -58,13 +70,19 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
 db = Database()
 
 async def process_message_queue(guild_id: int):
+    if debug_mode:
+        logger.debug(f"メッセージキューの処理を開始 - ギルドID: {guild_id}")
     while True:
         try:
             message_data = await message_queues[guild_id].get()
             if message_data is None:
+                if debug_mode:
+                    logger.debug(f"メッセージキューが終了しました - ギルドID: {guild_id}")
                 break
 
             text, voice_name, speed, voice_client, engine = message_data
+            if debug_mode:
+                logger.debug(f"メッセージを処理中 - テキスト: {text}")
 
             await speak_in_voice_channel(voice_client, text, voice_name, speed, engine)
 
@@ -74,17 +92,25 @@ async def process_message_queue(guild_id: int):
             continue
 
 async def read_message(message_or_text, guild=None, author=None, channel=None):
+    if debug_mode:
+        logger.debug('メッセージ読み上げ処理を開始')
     if isinstance(message_or_text, str):
         text = message_or_text
         if guild is None or channel is None:
+            if debug_mode:
+                logger.debug('ギルドまたはチャンネルが指定されていません')
             return
     else:
         message = message_or_text
         if message.author.bot:
+            if debug_mode:
+                logger.debug('ボットからのメッセージは無視します')
             return
 
         channels = await db.get_read_channels()
         if message.guild.id not in channels or message.channel.id != channels[message.guild.id]:
+            if debug_mode:
+                logger.debug(f"読み上げ対象外のチャンネルです - ギルドID: {message.guild.id}, チャンネルID: {message.channel.id}")
             return
 
         guild = message.guild
@@ -94,6 +120,8 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
 
     voice_client = guild.voice_client
     if voice_client is None or not voice_client.is_connected():
+        if debug_mode:
+            logger.debug('ボイスクライアントが接続されていません')
         return
 
     dictionary_replacements = await db.get_dictionary_replacements(guild.id)
@@ -112,6 +140,8 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
 
     if voice_settings:
         voice_name, speed, engine = voice_settings
+        if debug_mode:
+            logger.debug(f"ユーザー設定を使用 - ボイス: {voice_name}, 速度: {speed}, エンジン: {engine}")
 
     for match in re.finditer(r'<@!?(\d+)>', text):
         user_id = int(match.group(1))
@@ -133,10 +163,17 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
     if engine.startswith('aquestalk'):
         text = convert_text_to_speech(text)
 
+    if debug_mode:
+        logger.debug(f"処理後のテキスト: {text}")
+
     await message_queues[guild.id].put((text, voice_name, speed, voice_client, engine))
 
     if guild.id not in reading_tasks or reading_tasks[guild.id].done():
         reading_tasks[guild.id] = asyncio.create_task(process_message_queue(guild.id))
+        if debug_mode:
+            logger.debug(f"メッセージキュー処理タスクを開始 - ギルドID: {guild.id}")
 
 async def update_voice_settings(guild_id: int, user_id: int, voice_name: str, speed: int, engine: str):
+    if debug_mode:
+        logger.debug(f"ボイス設定を更新 - ギルドID: {guild_id}, ユーザーID: {user_id}, ボイス: {voice_name}, 速度: {speed}, エンジン: {engine}")
     current_voice_settings[(guild_id, user_id)] = (voice_name, speed, engine)
