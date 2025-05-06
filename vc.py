@@ -84,7 +84,7 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
             return
 
         channels = await db.get_read_channels()
-        if message.guild.id not in channels or message.channel.id != channels[message.guild.id]:
+        if message.guild.id not in channels or message.channel.id != channels[message.guild.id][1]:
             return
 
         guild = message.guild
