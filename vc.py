@@ -48,7 +48,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
         while voice_client.is_playing():
             await asyncio.sleep(0.1)
 
-        voice_client.play(discord.FFmpegPCMAudio(audio_file), after=after_playing)
+        voice_client.play(discord.FFmpegPCMAudio(audio_file, before_options='-guess_layout_max 0'), after=after_playing)
         await future
         return True
     except Exception as e:
