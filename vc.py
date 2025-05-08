@@ -3,6 +3,7 @@ import discord
 import re
 import asyncio
 import json
+import time
 from collections import defaultdict
 from database import Database
 from text_to_speech import convert_text_to_speech
@@ -30,6 +31,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
         return False
 
     try:
+        start_time = time.time()
         match engine:
             case 'voicevox':
                 audio = Voicevox(text, int(voice_name))
@@ -41,11 +43,15 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
                 raise ValueError(f"無効なエンジン: {engine}")
 
         audio_file = await audio.get_audio()
+        generation_time = time.time() - start_time
 
         if audio_file is None:
             if debug_mode:
                 logger.debug('音声ファイルの生成に失敗しました')
             return False
+
+        if debug_mode:
+            logger.debug(f"音声生成完了 - 所要時間: {generation_time:.2f}秒")
 
         future = asyncio.Future()
         def after_playing(error):
