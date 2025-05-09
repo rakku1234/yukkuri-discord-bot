@@ -4,6 +4,7 @@ from discord import app_commands
 from database import Database
 from vc import update_voice_settings, message_queues, reading_tasks
 from loguru import logger
+from config import load_config
 
 db = Database()
 
@@ -138,18 +139,29 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message('速度は50から200の間で指定してください。', ephemeral=True)
             return
 
+        config = load_config()
+
         match engine:
             case 'aquestalk1':
+                if not config['engine_enabled']['aquestalk1']:
+                    await interaction.response.send_message('AquesTalk1は無効になっています。', ephemeral=True)
+                    return
                 valid_voices = [v['value'] for v in voice_characters['AquesTalk1']]
                 if voice not in valid_voices:
                     await interaction.response.send_message('無効なAquesTalk1の音声が指定されました。', ephemeral=True)
                     return
             case 'aquestalk2':
+                if not config['engine_enabled']['aquestalk2']:
+                    await interaction.response.send_message('AquesTalk2は無効になっています。', ephemeral=True)
+                    return
                 valid_voices = [v['value'] for v in voice_characters['AquesTalk2']]
                 if voice not in valid_voices:
                     await interaction.response.send_message('無効なAquesTalk2の音声が指定されました。', ephemeral=True)
                     return
             case 'voicevox':
+                if not config['engine_enabled']['voicevox']:
+                    await interaction.response.send_message('VOICEVOXは無効になっています。', ephemeral=True)
+                    return
                 valid_voices = [v['value'] for v in voice_characters['voicevox']]
                 if voice not in valid_voices:
                     await interaction.response.send_message('無効なVOICEVOXの音声が指定されました。', ephemeral=True)

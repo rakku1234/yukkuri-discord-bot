@@ -9,6 +9,7 @@ from text_to_speech import convert_text_to_speech
 from loguru import logger
 from aquestalk import AquesTalk1, AquesTalk2
 from voicevox import Voicevox
+from config import load_config
 
 current_voice_settings = {}
 message_queues = defaultdict(asyncio.Queue)
@@ -19,15 +20,23 @@ with open('voice_character.json', encoding='utf-8') as f:
 
 async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, voice_name: str, speed: int, engine: str):
     if not voice_client or not voice_client.is_connected():
-        return False
+        return
+
+    config = load_config()
 
     try:
         match engine:
             case 'voicevox':
+                if not config['engine_enabled']['voicevox']:
+                    return
                 audio = Voicevox(text, int(voice_name))
             case 'aquestalk1':
+                if not config['engine_enabled']['aquestalk1']:
+                    return
                 audio = AquesTalk1(text, speed, voice_name)
             case 'aquestalk2':
+                if not config['engine_enabled']['aquestalk2']:
+                    return
                 audio = AquesTalk2(text, speed, voice_name)
             case _:
                 raise ValueError(f"無効なエンジン: {engine}")
@@ -35,7 +44,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
         audio_file = await audio.get_audio()
 
         if audio_file is None:
-            return False
+            return
 
         future = asyncio.Future()
         def after_playing(error):
@@ -50,10 +59,8 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
 
         voice_client.play(discord.FFmpegPCMAudio(audio_file, before_options='-guess_layout_max 0'), after=after_playing)
         await future
-        return True
     except Exception as e:
         logger.error(f"音声合成エラー: {e}")
-        return False
 
 db = Database()
 

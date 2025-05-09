@@ -9,5 +9,10 @@
         "user": "root",
         "password": "",
         "database": "bot.db"
+    },
+    "engine_enabled": {
+        "aquestalk1": false,
+        "aquestalk2": false,
+        "voicevox": true
     }
 }
