@@ -8,6 +8,7 @@ python3.12でテスト済み
 - [AquesTalk1](https://www.a-quest.com/products/aquestalk_1.html)
 - [AquesTalk2](https://www.a-quest.com/products/aquestalk_2.html)
 - [VoiceVox](https://voicevox.hiroshiba.jp/)
+- [SHAREVOX](https://www.sharevox.app/)
 
 デフォルトではvoicevoxを使用します
 
