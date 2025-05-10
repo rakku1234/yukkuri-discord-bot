@@ -4,3 +4,4 @@ aiofiles
 discord.py[voice]
 loguru
 voicevox_core @ https://github.com/VOICEVOX/voicevox_core/releases/download/0.16.0/voicevox_core-0.16.0-cp310-abi3-manylinux_2_34_x86_64.whl
+sharevox_core @ https://github.com/SHAREVOX/sharevox_core/releases/download/0.2.1/sharevox_core-0.2.1+cpu-cp38-abi3-linux_x86_64.whl

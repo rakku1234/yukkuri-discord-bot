@@ -9,6 +9,7 @@ from text_to_speech import convert_text_to_speech
 from loguru import logger
 from aquestalk import AquesTalk1, AquesTalk2
 from voicevox import Voicevox
+from sharevox import Sharevox
 from config import load_config
 
 current_voice_settings = {}
@@ -38,6 +39,10 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
                 if not config['engine_enabled']['aquestalk2']:
                     return
                 audio = AquesTalk2(text, speed, voice_name)
+            case 'sharevox':
+                if not config['engine_enabled']['sharevox']:
+                    return
+                audio = Sharevox(text, int(voice_name))
             case _:
                 raise ValueError(f"無効なエンジン: {engine}")
 

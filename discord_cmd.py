@@ -124,7 +124,8 @@ def setup_commands(tree: app_commands.CommandTree):
         engine=[
             app_commands.Choice(name='AquesTalk1', value='aquestalk1'),
             app_commands.Choice(name='AquesTalk2', value='aquestalk2'),
-            app_commands.Choice(name='VOICEVOX', value='voicevox')
+            app_commands.Choice(name='VOICEVOX', value='voicevox'),
+            app_commands.Choice(name='SHAREVOX', value='sharevox')
         ]
     )
     async def setvoice(
@@ -166,6 +167,14 @@ def setup_commands(tree: app_commands.CommandTree):
                 if voice not in valid_voices:
                     await interaction.response.send_message('無効なVOICEVOXの音声が指定されました。', ephemeral=True)
                     return
+            case 'sharevox':
+                if not config['engine_enabled']['sharevox']:
+                    await interaction.response.send_message('SHAREVOXは無効になっています。', ephemeral=True)
+                    return
+                valid_voices = [v['value'] for v in voice_characters['sharevox']]
+                if voice not in valid_voices:
+                    await interaction.response.send_message('無効なSHAREVOXの音声が指定されました。', ephemeral=True)
+                    return
 
         try:
             await db.set_voice_settings(interaction.guild_id, interaction.user.id, voice, speed, engine)
@@ -185,6 +194,11 @@ def setup_commands(tree: app_commands.CommandTree):
                             break
                 case 'voicevox':
                     for v in voice_characters['voicevox']:
+                        if v['value'] == voice:
+                            voice_name = v['name']
+                            break
+                case 'sharevox':
+                    for v in voice_characters['sharevox']:
                         if v['value'] == voice:
                             voice_name = v['name']
                             break
@@ -214,6 +228,8 @@ def setup_commands(tree: app_commands.CommandTree):
                 voices = voice_characters['AquesTalk2']
             case 'voicevox':
                 voices = voice_characters['voicevox']
+            case 'sharevox':
+                voices = voice_characters['sharevox']
 
         choices = [
             app_commands.Choice(name=voice['name'], value=voice['value'])

@@ -5,6 +5,7 @@ from vc import read_message, db
 from config import load_config
 from loguru import logger
 from voicevox import Voicevox
+from sharevox import Sharevox
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -40,8 +41,9 @@ async def on_ready():
 
     try:
         await Voicevox.init()
+        Sharevox.init()
     except Exception as e:
-        logger.error(f"Voicevoxの初期化に失敗しました: {e}")
+        logger.error(f"音声合成エンジンの初期化に失敗しました: {e}")
 
 @client.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):

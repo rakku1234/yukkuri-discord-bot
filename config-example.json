@@ -13,6 +13,7 @@
     "engine_enabled": {
         "aquestalk1": false,
         "aquestalk2": false,
-        "voicevox": true
+        "voicevox": true,
+        "sharevox": false
     }
 }
