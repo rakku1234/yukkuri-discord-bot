@@ -1,4 +1,3 @@
-import asyncio
 import dataclasses
 import os
 import aiofiles
@@ -32,9 +31,6 @@ class Voicevox:
     _instance = None
     _synthesizer = None
     _initialized = False
-    _initializing = False
-    _init_lock = asyncio.Lock()
-    _model_loaded = set()
 
     def __init__(self, text, style_id=0):
         self.text = text
@@ -50,38 +46,32 @@ class Voicevox:
         if cls._instance is None:
             cls._instance = cls('', 0)
 
-        async with cls._init_lock:
-            if not cls._initialized and not cls._initializing:
-                cls._initializing = True
+        if not cls._initialized:
+            if cls._synthesizer is None:
+                onnxruntime = await Onnxruntime.load_once(filename=cls._instance.config.onnxruntime_path)
+                open_jtalk = await OpenJtalk.new(cls._instance.config.dict_dir)
+
+                cls._synthesizer = Synthesizer(onnxruntime, open_jtalk)
+
+            model_count = 0
+            model_loaded = set()
+            for model_file in Path(cls._instance.config.vvm_path).glob('*.vvm'):
                 try:
-                    if cls._synthesizer is None:
-                        onnxruntime = await Onnxruntime.load_once(filename=cls._instance.config.onnxruntime_path)
-                        open_jtalk = await OpenJtalk.new(cls._instance.config.dict_dir)
+                    model_id = model_file.stem
+                    if model_id not in model_loaded:
+                        async with await VoiceModelFile.open(model_file) as model:
+                            await cls._synthesizer.load_voice_model(model)
+                        model_count += 1
+                        model_loaded.add(model_id)
+                except Exception as e:
+                    logger.warning(f"モデル {model_file.name} の読み込みに失敗しました: {e}")
+                    continue
 
-                        cls._synthesizer = Synthesizer(onnxruntime, open_jtalk)
-
-                    cls._model_loaded.clear()
-                    model_count = 0
-                    for model_file in Path(cls._instance.config.vvm_path).glob('*.vvm'):
-                        try:
-                            model_id = model_file.stem
-                            if model_id not in cls._model_loaded:
-                                async with await VoiceModelFile.open(model_file) as model:
-                                    await cls._synthesizer.load_voice_model(model)
-                                cls._model_loaded.add(model_id)
-                                model_count += 1
-                        except Exception as e:
-                            logger.warning(f"モデル {model_file.name} の読み込みに失敗しました: {e}")
-                            continue
-
-                    cls._initialized = True
-                    logger.success('Voicevoxの初期化に成功しました')
-                finally:
-                    cls._initializing = False
+            cls._initialized = True
+            logger.success('Voicevoxの初期化に成功しました')
 
     async def get_audio(self):
         try:
-            await Voicevox.init()
             if Voicevox._synthesizer is None:
                 raise RuntimeError('シンセサイザーが初期化されていません')
 
