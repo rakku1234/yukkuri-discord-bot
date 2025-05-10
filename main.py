@@ -85,6 +85,7 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    await read_message(message)
+    if len(message.content) > 0:
+        await read_message(message)
 
 client.run(load_config()['discord']['token'])
