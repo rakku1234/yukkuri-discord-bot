@@ -28,9 +28,7 @@ def convert_text_to_speech(text: str) -> str:
 
     try:
         if system == 'windows':
-            aq_kanji2koe.AqKanji2Koe_Convert_utf8.argtypes = [
-                ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int
-            ]
+            aq_kanji2koe.AqKanji2Koe_Convert_utf8.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
             aq_kanji2koe.AqKanji2Koe_Convert_utf8.restype = ctypes.c_int
             output_buffer = ctypes.create_string_buffer(4096)
             result = aq_kanji2koe.AqKanji2Koe_Convert_utf8(instance, text.encode('utf-8'), output_buffer, 4096)
@@ -39,9 +37,7 @@ def convert_text_to_speech(text: str) -> str:
             else:
                 raise Exception(f"変換に失敗しました。エラーコード: {result}")
         elif system == 'linux':
-            aq_kanji2koe.AqKanji2Koe_Convert.argtypes = [
-                ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int
-            ]
+            aq_kanji2koe.AqKanji2Koe_Convert.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
             aq_kanji2koe.AqKanji2Koe_Convert.restype = ctypes.c_int
             output_buffer = ctypes.create_string_buffer(4096)
             result = aq_kanji2koe.AqKanji2Koe_Convert(instance, text.encode('utf-8'), output_buffer, 4096)
