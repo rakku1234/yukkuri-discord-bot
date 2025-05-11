@@ -9,6 +9,8 @@ python3.12でテスト済み
 - [AquesTalk2](https://www.a-quest.com/products/aquestalk_2.html)
 - [VoiceVox](https://voicevox.hiroshiba.jp/)
 
+合成音声エンジン、ボイスキャラクターの利用規約に従って使用してください
+
 デフォルトではvoicevoxを使用します
 
 ## インストール方法
