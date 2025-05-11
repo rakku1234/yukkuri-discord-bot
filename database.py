@@ -14,7 +14,7 @@ class Database:
             cls._instance.config = load_config()
         return cls._instance
 
-    async def connect(self):
+    async def connect(self) -> None:
         db_config = self.config['database']
         connection_type = db_config.get('connection', 'mysql')
 
@@ -32,7 +32,7 @@ class Database:
             self.pool = await aiomysql.create_pool(**db_config)
             await self.create_tables_mysql()
 
-    async def create_tables_sqlite(self):
+    async def create_tables_sqlite(self) -> None:
         async with self.connection.cursor() as cursor:
             await cursor.execute("""
                 CREATE TABLE IF NOT EXISTS read_channels (
@@ -71,7 +71,7 @@ class Database:
             """)
             await self.connection.commit()
 
-    async def create_tables_mysql(self):
+    async def create_tables_mysql(self) -> None:
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cursor:
                 await cursor.execute("""
@@ -160,7 +160,28 @@ class Database:
                     rows = await cursor.fetchall()
                     return {row[0]: (row[1], row[2]) for row in rows}
 
-    async def set_read_channel(self, server_id: int, voice_channel: int, chat_channel: int):
+    async def get_read_channel(self, server_id: int) -> Tuple[int, int] | None:
+        if self.config['database'].get('connection') == 'sqlite':
+            async with self.connection.cursor() as cursor:
+                await cursor.execute("""
+                    SELECT voice_channel, chat_channel 
+                    FROM read_channels 
+                    WHERE server_id = ?
+                """, (server_id,))
+                result = await cursor.fetchone()
+                return result if result else None
+        else:
+            async with self.pool.acquire() as conn:
+                async with conn.cursor() as cursor:
+                    await cursor.execute("""
+                        SELECT voice_channel, chat_channel 
+                        FROM read_channels 
+                        WHERE server_id = %s
+                    """, (server_id,))
+                    result = await cursor.fetchone()
+                    return result if result else None
+
+    async def set_read_channel(self, server_id: int, voice_channel: int, chat_channel: int) -> None:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("""
@@ -180,7 +201,7 @@ class Database:
                     """, (server_id, voice_channel, chat_channel, voice_channel, chat_channel))
                     await conn.commit()
 
-    async def remove_read_channel(self, server_id: int):
+    async def remove_read_channel(self, server_id: int) -> None:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("DELETE FROM read_channels WHERE server_id = ?", (server_id,))
@@ -191,7 +212,7 @@ class Database:
                     await cursor.execute("DELETE FROM read_channels WHERE server_id = %s", (server_id,))
                     await conn.commit()
 
-    async def set_autojoin(self, server_id: int, voice_channel: int, text_channel: int):
+    async def set_autojoin(self, server_id: int, voice_channel: int, text_channel: int) -> None:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("""
@@ -211,7 +232,7 @@ class Database:
                     """, (server_id, voice_channel, text_channel, voice_channel, text_channel))
                     await conn.commit()
 
-    async def get_autojoin(self, server_id: int) -> tuple[int, int] | None:
+    async def get_autojoin(self, server_id: int) -> Tuple[int, int] | None:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("""
@@ -232,7 +253,7 @@ class Database:
                     result = await cursor.fetchone()
                     return result if result else None
 
-    async def remove_autojoin(self, server_id: int):
+    async def remove_autojoin(self, server_id: int) -> None:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("DELETE FROM autojoin WHERE server_id = ?", (server_id,))
@@ -243,7 +264,7 @@ class Database:
                     await cursor.execute("DELETE FROM autojoin WHERE server_id = %s", (server_id,))
                     await conn.commit()
 
-    async def set_voice_settings(self, server_id: int, user_id: int, voice_name: str, speed: int, engine: str):
+    async def set_voice_settings(self, server_id: int, user_id: int, voice_name: str, speed: int, engine: str) -> None:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("""
@@ -264,7 +285,7 @@ class Database:
                     """, (server_id, user_id, voice_name, speed, engine, voice_name, speed, engine))
                     await conn.commit()
 
-    async def get_voice_settings(self, server_id: int, user_id: int) -> tuple[str, int, str] | None:
+    async def get_voice_settings(self, server_id: int, user_id: int) -> Tuple[str, int, str] | None:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("""
@@ -285,7 +306,7 @@ class Database:
                     result = await cursor.fetchone()
                     return result if result else None
 
-    async def set_dictionary_replacement(self, server_id: int, original_text: str, replacement_text: str):
+    async def set_dictionary_replacement(self, server_id: int, original_text: str, replacement_text: str) -> None:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("""
@@ -324,7 +345,7 @@ class Database:
                     rows = await cursor.fetchall()
                     return {row[0]: row[1] for row in rows}
 
-    async def remove_dictionary_replacement(self, server_id: int, original_text: str):
+    async def remove_dictionary_replacement(self, server_id: int, original_text: str) -> None:
         if self.config['database'].get('connection') == 'sqlite':
             async with self.connection.cursor() as cursor:
                 await cursor.execute("""
@@ -341,7 +362,7 @@ class Database:
                     """, (server_id, original_text))
                     await conn.commit()
 
-    async def close(self):
+    async def close(self) -> None:
         if self.config['database'].get('connection') == 'sqlite':
             if self.connection:
                 await self.connection.close()

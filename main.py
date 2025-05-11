@@ -47,12 +47,19 @@ async def on_ready():
 @client.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
     if member.id == client.user.id:
+        if before.channel is not None and after.channel is None:
+            await db.remove_read_channel(member.guild.id)
+        if before.channel is not None and after.channel is not None and before.channel.id != after.channel.id:
+            read_channel = await db.get_read_channel(member.guild.id)
+            if read_channel:
+                await db.set_read_channel(member.guild.id, after.channel.id, read_channel[1])
         return
 
     if before.channel is None and after.channel is not None:
         autojoin = await db.get_autojoin(member.guild.id)
         if autojoin and after.channel.id == autojoin[0]:
-            if member.guild.voice_client is None:
+            member_count = len([m for m in after.channel.members if not m.bot])
+            if member_count == 1 and member.guild.voice_client is None:
                 try:
                     await after.channel.connect(self_deaf=True)
                     await db.set_read_channel(member.guild.id, after.channel.id, autojoin[1])
