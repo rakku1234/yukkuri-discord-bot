@@ -6,18 +6,10 @@ from pathlib import Path
 from loguru import logger
 from voicevox_core.asyncio import Onnxruntime, OpenJtalk, Synthesizer, VoiceModelFile
 
-@dataclasses.dataclass
 class VoicevoxConfig:
-    vvm_path: str = None
-    onnxruntime_path: str = None
-    dict_dir: str = None
-    style_id: int = 0
-    system: str = platform.system().lower()
-
-    @staticmethod
     def get_default_config():
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        match VoicevoxConfig.system:
+        match platform.system().lower():
             case 'windows':
                 onnxruntime_path = os.path.join(base_dir, 'voicevox', 'onnxruntime', 'lib', 'voicevox_onnxruntime.dll')
             case 'linux':
@@ -25,7 +17,11 @@ class VoicevoxConfig:
             case _:
                 raise RuntimeError("サポートされていないオペレーティングシステムです")
 
-        return VoicevoxConfig(os.path.join(base_dir, 'voicevox', 'models', 'vvms'), onnxruntime_path, os.path.join(base_dir, 'voicevox', 'dict', 'open_jtalk_dic_utf'))
+        return {
+            'vvm_path': os.path.join(base_dir, 'voicevox', 'models', 'vvms'),
+            'onnxruntime_path': onnxruntime_path,
+            'dict_dir': os.path.join(base_dir,'voicevox', 'dict', 'open_jtalk_dic_utf')
+        }
 
 class Voicevox:
     _instance = None
@@ -48,14 +44,14 @@ class Voicevox:
 
         if not cls._initialized:
             if cls._synthesizer is None:
-                onnxruntime = await Onnxruntime.load_once(filename=cls._instance.config.onnxruntime_path)
-                open_jtalk = await OpenJtalk.new(cls._instance.config.dict_dir)
+                onnxruntime = await Onnxruntime.load_once(filename=cls._instance.config['onnxruntime_path'])
+                open_jtalk = await OpenJtalk.new(cls._instance.config['dict_dir'])
 
                 cls._synthesizer = Synthesizer(onnxruntime, open_jtalk)
 
             model_count = 0
             model_loaded = set()
-            for model_file in Path(cls._instance.config.vvm_path).glob('*.vvm'):
+            for model_file in Path(cls._instance.config['vvm_path']).glob('*.vvm'):
                 try:
                     model_id = model_file.stem
                     if model_id not in model_loaded:
