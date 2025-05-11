@@ -7,6 +7,12 @@ from loguru import logger
 from config import load_config
 
 db = Database()
+engine_key = {
+    'aquestalk1': 'AquesTalk1',
+    'aquestalk2': 'AquesTalk2',
+    'voicevox': 'voicevox',
+    'aivisspeech': 'aivisspeech'
+}
 
 def load_voice_characters() -> list[dict]:
     try:
@@ -144,71 +150,41 @@ def setup_commands(tree: app_commands.CommandTree):
 
         match engine:
             case 'aquestalk1':
-                if not config['engine_enabled']['aquestalk1']:
-                    await interaction.response.send_message('AquesTalk1は無効になっています。', ephemeral=True)
-                    return
-                valid_voices = [v['value'] for v in voice_characters['AquesTalk1']]
-                if voice not in valid_voices:
-                    await interaction.response.send_message('無効なAquesTalk1の音声が指定されました。', ephemeral=True)
+                is_valid, error_message = validate_voice_engine(engine, voice, config, voice_characters)
+                if not is_valid:
+                    await interaction.response.send_message(error_message, ephemeral=True)
                     return
             case 'aquestalk2':
-                if not config['engine_enabled']['aquestalk2']:
-                    await interaction.response.send_message('AquesTalk2は無効になっています。', ephemeral=True)
-                    return
-                valid_voices = [v['value'] for v in voice_characters['AquesTalk2']]
-                if voice not in valid_voices:
-                    await interaction.response.send_message('無効なAquesTalk2の音声が指定されました。', ephemeral=True)
+                is_valid, error_message = validate_voice_engine(engine, voice, config, voice_characters)
+                if not is_valid:
+                    await interaction.response.send_message(error_message, ephemeral=True)
                     return
             case 'voicevox':
-                if not config['engine_enabled']['voicevox']:
-                    await interaction.response.send_message('VOICEVOXは無効になっています。', ephemeral=True)
-                    return
-                valid_voices = [v['value'] for v in voice_characters['voicevox']]
-                if voice not in valid_voices:
-                    await interaction.response.send_message('無効なVOICEVOXの音声が指定されました。', ephemeral=True)
+                is_valid, error_message = validate_voice_engine(engine, voice, config, voice_characters)
+                if not is_valid:
+                    await interaction.response.send_message(error_message, ephemeral=True)
                     return
             case 'aivisspeech':
-                if not config['engine_enabled']['aivisspeech']:
-                    await interaction.response.send_message('AivisSpeechは無効になっています。', ephemeral=True)
-                    return
-                valid_voices = [v['value'] for v in voice_characters['aivisspeech']]
-                if voice not in valid_voices:
-                    await interaction.response.send_message('無効なAivisSpeechの音声が指定されました。', ephemeral=True)
+                is_valid, error_message = validate_voice_engine(engine, voice, config, voice_characters)
+                if not is_valid:
+                    await interaction.response.send_message(error_message, ephemeral=True)
                     return
 
         try:
             await db.set_voice_settings(interaction.guild_id, interaction.user.id, voice, speed, engine)
             await update_voice_settings(interaction.guild_id, interaction.user.id, voice, speed, engine)
 
-            voice_name = ''
-            match engine:
-                case 'aquestalk1':
-                    for v in voice_characters['AquesTalk1']:
-                        if v['value'] == voice:
-                            voice_name = v['name']
-                            break
-                case 'aquestalk2':
-                    for v in voice_characters['AquesTalk2']:
-                        if v['value'] == voice:
-                            voice_name = v['name']
-                            break
-                case 'voicevox':
-                    for v in voice_characters['voicevox']:
-                        if v['value'] == voice:
-                            voice_name = v['name']
-                            break
-                case 'aivisspeech':
-                    for v in voice_characters['aivisspeech']:
-                        if v['value'] == voice:
-                            voice_name = v['name']
-                            break
+            voice_name = get_voice_name(engine, voice, voice_characters)
 
-            await interaction.response.send_message(
+            message = (
                 f"ボイス設定を更新しました。\n"
                 f"エンジン: {engine}\n"
                 f"キャラクター: {voice_name}\n"
-                f"速度: {speed}"
             )
+            if engine.startswith('aquestalk'):
+                message += f"速度: {speed}"
+
+            await interaction.response.send_message(message)
         except Exception as e:
             await interaction.response.send_message(f"設定の更新に失敗しました: {str(e)}")
 
@@ -221,16 +197,7 @@ def setup_commands(tree: app_commands.CommandTree):
         if not engine:
             return []
 
-        match engine:
-            case 'aquestalk1':
-                voices = voice_characters['AquesTalk1']
-            case 'aquestalk2':
-                voices = voice_characters['AquesTalk2']
-            case 'voicevox':
-                voices = voice_characters['voicevox']
-            case 'aivisspeech':
-                voices = voice_characters['aivisspeech']
-
+        voices = voice_characters[engine_key[engine]]
         choices = [
             app_commands.Choice(name=voice['name'], value=voice['value'])
             for voice in voices
@@ -313,3 +280,17 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message(f"単語の削除に失敗しました: {str(e)}", ephemeral=True)
 
     tree.add_command(dict_group)
+
+def validate_voice_engine(engine: str, voice: str, config: dict, voice_characters: dict) -> tuple[bool, str]:
+    if not config['engine_enabled'][engine]:
+        return False, f'{engine}は無効になっています。'
+    valid_voices = [v['value'] for v in voice_characters[engine_key[engine]]]
+    if voice not in valid_voices:
+        return False, f'無効な{engine}の音声が指定されました。'
+    return True, ''
+
+def get_voice_name(engine: str, voice: str, voice_characters: dict) -> str:
+    for v in voice_characters[engine_key[engine]]:
+        if v['value'] == voice:
+            return v['name']
+    return ''
