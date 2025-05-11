@@ -10,6 +10,8 @@ python3.12でテスト済み
 - [VoiceVox](https://voicevox.hiroshiba.jp/)
 - [SHAREVOX](https://www.sharevox.app/)
 
+合成音声エンジン、ボイスキャラクターの利用規約に従って使用してください
+
 デフォルトではvoicevoxを使用します
 
 ## インストール方法
