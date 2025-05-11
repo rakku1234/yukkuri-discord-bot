@@ -7,10 +7,13 @@ python3.12でテスト済み
 ## 使用している合成音声エンジン
 - [AquesTalk1](https://www.a-quest.com/products/aquestalk_1.html)
 - [AquesTalk2](https://www.a-quest.com/products/aquestalk_2.html)
+- [AqKanji2Koe](https://www.a-quest.com/products/aqkanji2koe.html)
 - [VoiceVox](https://voicevox.hiroshiba.jp/)
 - [AivisSpeech](https://aivis-project.com/)
 
 合成音声エンジン、ボイスキャラクターの利用規約に従って使用してください
+
+AquesTalk1, AquesTalk2, AqKanji2Koeのライセンス認証は[これを](https://github.com/rakku1234/yukkuri-discord-bot/tree/aquest-license)使用すればできると思います
 
 デフォルトではvoicevoxを使用します
 
