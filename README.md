@@ -8,6 +8,7 @@ python3.12でテスト済み
 - [AquesTalk1](https://www.a-quest.com/products/aquestalk_1.html)
 - [AquesTalk2](https://www.a-quest.com/products/aquestalk_2.html)
 - [VoiceVox](https://voicevox.hiroshiba.jp/)
+- [AivisSpeech](https://aivis-project.com/)
 
 合成音声エンジン、ボイスキャラクターの利用規約に従って使用してください
 

@@ -42,5 +42,8 @@
         {"name": "満別花丸", "value": "69"},
         {"name": "琴詠ニア", "value": "74"},
         {"name": "中部つるぎ", "value": "94"}
+    ],
+    "aivisspeech": [
+        {"name": "Anneli", "value": "888753760"}
     ]
 }

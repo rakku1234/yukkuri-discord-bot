@@ -39,7 +39,8 @@ async def on_ready():
             await voice_channel.connect(self_deaf=True)
 
     try:
-        await Voicevox.init()
+        if load_config()['engine_enabled']['voicevox']:
+            await Voicevox.init()
     except Exception as e:
         logger.error(f"Voicevoxの初期化に失敗しました: {e}")
 

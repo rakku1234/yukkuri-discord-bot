@@ -9,6 +9,7 @@ from text_to_speech import convert_text_to_speech
 from loguru import logger
 from aquestalk import AquesTalk1, AquesTalk2
 from voicevox import Voicevox
+from aivisspeech import aivisspeech
 from config import load_config
 
 current_voice_settings = {}
@@ -30,6 +31,10 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
                 if not config['engine_enabled']['voicevox']:
                     return
                 audio = Voicevox(text, int(voice_name))
+            case 'aivisspeech':
+                if not config['engine_enabled']['aivisspeech']:
+                    return
+                audio = aivisspeech(text, int(voice_name))
             case 'aquestalk1':
                 if not config['engine_enabled']['aquestalk1']:
                     return
