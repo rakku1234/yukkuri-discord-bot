@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from discord_cmd import setup_commands
 from vc import read_message, db
-from config import load_config
+from config import Config
 from loguru import logger
 from voicevox import Voicevox
 
@@ -39,7 +39,7 @@ async def on_ready():
             await voice_channel.connect(self_deaf=True)
 
     try:
-        if load_config()['engine_enabled']['voicevox']:
+        if (await Config.async_load_config())['engine_enabled']['voicevox']:
             await Voicevox.init()
     except Exception as e:
         logger.error(f"Voicevoxの初期化に失敗しました: {e}")
@@ -97,4 +97,4 @@ async def on_message(message):
     if len(message.content) > 0:
         await read_message(message)
 
-client.run(load_config()['discord']['token'])
+client.run(Config.load_config()['discord']['token'])

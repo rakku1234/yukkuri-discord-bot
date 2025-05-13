@@ -1,11 +1,11 @@
 import aiohttp
 import aiofiles
-from config import load_config
+from config import Config
 from loguru import logger
 
 class aivisspeech:
     def __init__(self, text: str, speaker: int):
-        config = load_config()
+        config = Config.load_config()
         self.url = config['aivisspeech']['url']
         self.params = {
             'text': text,

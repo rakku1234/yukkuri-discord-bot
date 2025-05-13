@@ -10,7 +10,7 @@ from loguru import logger
 from aquestalk import AquesTalk1, AquesTalk2
 from voicevox import Voicevox
 from aivisspeech import aivisspeech
-from config import load_config
+from config import Config
 
 current_voice_settings = {}
 message_queues = defaultdict(asyncio.Queue)
@@ -23,7 +23,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
     if not voice_client or not voice_client.is_connected():
         return
 
-    config = load_config()
+    config = await Config.async_load_config()
 
     try:
         match engine:

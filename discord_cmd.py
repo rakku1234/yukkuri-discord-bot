@@ -4,7 +4,7 @@ from discord import app_commands
 from database import Database
 from vc import update_voice_settings, message_queues, reading_tasks
 from loguru import logger
-from config import load_config
+from config import Config
 
 db = Database()
 engine_key = {
@@ -89,22 +89,35 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message(f"設定の更新に失敗しました: {str(e)}")
 
     @autojoin_group.command(name='remove', description='自動参加設定を削除します')
-    async def autojoin_remove(interaction: discord.Interaction):
+    @app_commands.describe(voice='削除するボイスチャンネル')
+    async def autojoin_remove(
+        interaction: discord.Interaction,
+        voice: discord.VoiceChannel
+    ):
         await ensure_db_connection()
 
         try:
+            autojoin = await db.get_autojoin(interaction.guild_id)
+            if not autojoin:
+                await interaction.response.send_message('自動参加設定はありません。', ephemeral=True)
+                return
+
+            if voice.id != autojoin[0]:
+                await interaction.response.send_message(f'指定されたボイスチャンネル {voice.name} の自動参加設定はありません。', ephemeral=True)
+                return
+
             await db.remove_autojoin(interaction.guild_id)
-            await interaction.response.send_message('自動参加設定を削除しました。')
+            await interaction.response.send_message(f'ボイスチャンネル {voice.name} の自動参加設定を削除しました。')
         except Exception as e:
             await interaction.response.send_message(f"設定の削除に失敗しました: {str(e)}")
 
-    @autojoin_group.command(name='get', description='現在の自動参加設定を表示します')
-    async def autojoin_get(interaction: discord.Interaction):
+    @autojoin_group.command(name='list', description='現在の自動参加設定一覧を表示します')
+    async def autojoin_list(interaction: discord.Interaction):
         await ensure_db_connection()
 
         autojoin = await db.get_autojoin(interaction.guild_id)
         if not autojoin:
-            await interaction.response.send_message('自動参加設定はありません。')
+            await interaction.response.send_message('自動参加設定はありません。', ephemeral=True)
             return
 
         voice_channel = interaction.guild.get_channel(autojoin[0])
@@ -114,7 +127,7 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message('設定されたチャンネルが見つかりません。', ephemeral=True)
             return
 
-        await interaction.response.send_message(f"現在の自動参加設定:\n"f"ボイスチャンネル: {voice_channel.name}\n"f"テキストチャンネル: {text_channel.name}",)
+        await interaction.response.send_message(f"現在の自動参加設定:\nボイスチャンネル: {voice_channel.name}\nテキストチャンネル: {text_channel.name}")
 
     tree.add_command(autojoin_group)
 
@@ -146,7 +159,7 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message('速度は50から200の間で指定してください。', ephemeral=True)
             return
 
-        config = load_config()
+        config = await Config.async_load_config()
 
         match engine:
             case 'aquestalk1':

@@ -1,7 +1,7 @@
 import aiomysql
 import aiosqlite
 from typing import Dict, Tuple
-from config import load_config
+from config import Config
 
 class Database:
     _instance = None
@@ -11,7 +11,7 @@ class Database:
             cls._instance = super(Database, cls).__new__(cls)
             cls._instance.pool = None
             cls._instance.connection = None
-            cls._instance.config = load_config()
+            cls._instance.config = Config.load_config()
         return cls._instance
 
     async def connect(self) -> None:
