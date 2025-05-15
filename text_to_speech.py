@@ -3,20 +3,20 @@ import os
 import platform
 
 class TextToSpeech:
-    def __init__(self, text: str, speaker: int):
+    def __init__(self, text: str):
         self.text = text
-        self.speaker = speaker
         self.system = platform.system().lower()
         self.dll_dir = os.path.join(os.path.dirname(__file__), 'AqKanji2Koe', 'lib')
         self.dic_dir = os.path.join(os.path.dirname(__file__), 'AqKanji2Koe', 'aq_dic')
 
         match self.system:
             case 'windows':
-                self.aq_kanji2koe = ctypes.WinDLL(os.path.join(self.dll_dir, 'AqKanji2Koe.dll'))
+                path = os.path.join(self.dll_dir, 'AqKanji2Koe.dll')
             case 'linux':
-                self.aq_kanji2koe = ctypes.CDLL(os.path.join(self.dll_dir, 'libAqKanji2Koe.so'))
+                path = os.path.join(self.dll_dir, 'libAqKanji2Koe.so')
             case _:
                 raise RuntimeError('サポートされていないオペレーティングシステムです')
+        self.aq_kanji2koe = ctypes.CDLL(path)
 
     def convert_text_to_speech(self) -> str:
         self.aq_kanji2koe.AqKanji2Koe_Create.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int)]

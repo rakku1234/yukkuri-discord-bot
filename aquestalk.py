@@ -15,14 +15,13 @@ class AquesTalk1:
         system = platform.system().lower()
         match system:
             case 'windows':
-                lib_name = 'AquesTalk.dll'
+                path = os.path.join(os.path.dirname(__file__), 'AquesTalk1', 'lib', self.voice_name, 'AquesTalk.dll')
             case 'linux':
-                lib_name = 'libAquesTalk.so'
+                path = os.path.join(os.path.dirname(__file__), 'AquesTalk1', 'lib', self.voice_name, 'libAquesTalk.so')
             case _:
                 raise RuntimeError('サポートされていないオペレーティングシステムです')
 
-        lib_path = os.path.join(os.path.dirname(__file__), 'AquesTalk1', 'lib', self.voice_name, lib_name)
-        self.aquestalk = ctypes.CDLL(lib_path)
+        self.aquestalk = ctypes.CDLL(path)
 
         self.aquestalk.AquesTalk_Synthe_Utf8.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
         self.aquestalk.AquesTalk_Synthe_Utf8.restype = ctypes.POINTER(ctypes.c_ubyte)

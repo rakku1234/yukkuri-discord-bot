@@ -149,7 +149,7 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
     text = re.sub(r'<:[a-zA-Z0-9_]+:[0-9]+>', '', text)
 
     if engine.startswith('aquestalk'):
-        text = TextToSpeech(text, voice_name).convert_text_to_speech()
+        text = TextToSpeech(text).convert_text_to_speech()
 
     await message_queues[guild.id].put((text, voice_name, speed, voice_client, engine))
 
