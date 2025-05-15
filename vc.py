@@ -2,9 +2,10 @@ import os
 import discord
 import re
 import asyncio
+import time
 from collections import defaultdict
 from database import Database
-from text_to_speech import convert_text_to_speech
+from text_to_speech import TextToSpeech
 from loguru import logger
 from aquestalk import AquesTalk1, AquesTalk2
 from voicevox import Voicevox
@@ -24,6 +25,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
     if debug:
         logger.debug(f"音声合成開始: {text}")
         logger.debug(f"使用する音声合成エンジン: {engine}")
+        start_time = time.time()
 
     try:
         match engine:
@@ -47,11 +49,16 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
                 raise ValueError(f"無効なエンジン: {engine}")
 
         audio_file = await audio.get_audio()
+        if debug:
+            end_time = time.time()
+            logger.debug(f"音声合成完了 - 所要時間: {end_time - start_time}秒")
 
         if audio_file is None:
             return
 
         future = asyncio.Future()
+        if debug:
+            logger.debug('音声再生が完了しました')
         def after_playing(error):
             if error:
                 future.set_exception(error)
@@ -143,7 +150,7 @@ async def read_message(message_or_text, guild=None, author=None, channel=None):
     text = re.sub(r'<:[a-zA-Z0-9_]+:[0-9]+>', '', text)
 
     if engine.startswith('aquestalk'):
-        text = convert_text_to_speech(text)
+        text = TextToSpeech(text, voice_name).convert_text_to_speech()
 
     await message_queues[guild.id].put((text, voice_name, speed, voice_client, engine))
 

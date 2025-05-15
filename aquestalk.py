@@ -4,7 +4,7 @@ import os
 import aiofiles
 
 class AquesTalk1:
-    def __init__(self, text, speed, voice_name):
+    def __init__(self, text: str, speed: int, voice_name: str):
         self.text = text
         self.speed = speed
         self.voice_name = voice_name
@@ -19,7 +19,7 @@ class AquesTalk1:
             case 'linux':
                 lib_name = 'libAquesTalk.so'
             case _:
-                raise OSError('サポートされていないプラットフォームです')
+                raise RuntimeError('サポートされていないオペレーティングシステムです')
 
         lib_path = os.path.join(os.path.dirname(__file__), 'AquesTalk1', 'lib', self.voice_name, lib_name)
         self.aquestalk = ctypes.CDLL(lib_path)
@@ -29,7 +29,7 @@ class AquesTalk1:
         self.aquestalk.AquesTalk_FreeWave.argtypes = [ctypes.POINTER(ctypes.c_ubyte)]
         self.aquestalk.AquesTalk_FreeWave.restype = None
 
-    async def get_audio(self):
+    async def get_audio(self) -> str:
         if self.aquestalk is None:
             self.init()
 
@@ -52,7 +52,7 @@ class AquesTalk1:
             self.aquestalk.AquesTalk_FreeWave(wav_data)
 
 class AquesTalk2:
-    def __init__(self, text, speed=100, voice_name='f4'):
+    def __init__(self, text: str, speed: int, voice_name: str):
         self.text = text
         self.speed = speed
         self.voice_name = voice_name
@@ -67,7 +67,7 @@ class AquesTalk2:
             case 'linux':
                 lib_name = 'libAquesTalk2Eva.so'
             case _:
-                raise OSError('サポートされていないプラットフォームです')
+                raise RuntimeError('サポートされていないオペレーティングシステムです')
 
         lib_path = os.path.join(os.path.dirname(__file__), 'AquesTalk2', 'lib', lib_name)
         phont_file = os.path.join(os.path.dirname(__file__), 'AquesTalk2', 'phont', f"{self.voice_name}.phont")
@@ -89,7 +89,7 @@ class AquesTalk2:
         if self.phont_ptr is None:
             raise RuntimeError(f"Phontファイルの読み込みに失敗しました: {phont_file}")
 
-    async def get_audio(self):
+    async def get_audio(self) -> str:
         if self.aquestalk is None:
             await self.init()
 

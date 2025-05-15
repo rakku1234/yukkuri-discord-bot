@@ -56,7 +56,8 @@ async def on_ready():
                 logger.debug(f"{guild_id}のボイスチャンネルに接続しました")
 
     try:
-        if (await Config.async_load_config())['engine_enabled']['voicevox']:
+        config = await Config.async_load_config()
+        if config['engine_enabled']['voicevox'] and config['voicevox']['edition']['core']:
             await Voicevox.init()
     except Exception as e:
         logger.error(f"Voicevoxの初期化に失敗しました: {e}")

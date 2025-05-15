@@ -1,10 +1,10 @@
-import json
+import yaml
 import os
 import aiofiles
 from typing import Dict, Any
 
 class Config:
-    _config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    _config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
     _ERROR_MESSAGES = {
         'file_not_found': "設定ファイルが見つかりません: {}",
         'invalid_format': "設定ファイルの形式が正しくありません: {}"
@@ -14,7 +14,7 @@ class Config:
     def _handle_config_errors(cls, error: Exception) -> None:
         if isinstance(error, FileNotFoundError):
             raise FileNotFoundError(cls._ERROR_MESSAGES['file_not_found'].format(cls._config_path))
-        if isinstance(error, json.JSONDecodeError):
+        if isinstance(error, yaml.YAMLError):
             raise ValueError(cls._ERROR_MESSAGES['invalid_format'].format(cls._config_path))
         raise error
 
@@ -22,7 +22,7 @@ class Config:
     def load_config(cls) -> Dict[str, Any]:
         try:
             with open(cls._config_path, encoding='utf-8') as f:
-                return json.loads(f.read())
+                return yaml.safe_load(f)
         except Exception as e:
             cls._handle_config_errors(e)
 
@@ -30,6 +30,6 @@ class Config:
     async def async_load_config(cls) -> Dict[str, Any]:
         try:
             async with aiofiles.open(cls._config_path, encoding='utf-8') as f:
-                return json.loads(await f.read())
+                return yaml.safe_load(await f.read())
         except Exception as e:
             cls._handle_config_errors(e)

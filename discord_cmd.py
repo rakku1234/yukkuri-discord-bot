@@ -5,6 +5,7 @@ from database import Database
 from vc import update_voice_settings, message_queues, reading_tasks
 from loguru import logger
 from config import Config
+from typing import Dict, List, Tuple
 
 db = Database()
 engine_key = {
@@ -14,7 +15,7 @@ engine_key = {
     'aivisspeech': 'aivisspeech'
 }
 
-def load_voice_characters() -> list[dict]:
+def load_voice_characters() -> List[Dict]:
     try:
         with open('voice_character.json', encoding='utf-8') as f:
             data = json.load(f)
@@ -71,15 +72,8 @@ def setup_commands(tree: app_commands.CommandTree):
     autojoin_group = app_commands.Group(name='autojoin', description='自動参加機能の設定')
 
     @autojoin_group.command(name='add', description='自動参加するボイスチャンネルと読み上げるテキストチャンネルを設定します')
-    @app_commands.describe(
-        voice='参加するボイスチャンネル',
-        text='読み上げるテキストチャンネル'
-    )
-    async def autojoin_add(
-        interaction: discord.Interaction,
-        voice: discord.VoiceChannel,
-        text: discord.TextChannel
-    ):
+    @app_commands.describe(voice='参加するボイスチャンネル', text='読み上げるテキストチャンネル')
+    async def autojoin_add(interaction: discord.Interaction, voice: discord.VoiceChannel, text: discord.TextChannel):
         await ensure_db_connection()
 
         try:
@@ -90,10 +84,7 @@ def setup_commands(tree: app_commands.CommandTree):
 
     @autojoin_group.command(name='remove', description='自動参加設定を削除します')
     @app_commands.describe(voice='削除するボイスチャンネル')
-    async def autojoin_remove(
-        interaction: discord.Interaction,
-        voice: discord.VoiceChannel
-    ):
+    async def autojoin_remove(interaction: discord.Interaction, voice: discord.VoiceChannel):
         await ensure_db_connection()
 
         try:
@@ -147,12 +138,7 @@ def setup_commands(tree: app_commands.CommandTree):
             app_commands.Choice(name='AivisSpeech', value='aivisspeech')
         ]
     )
-    async def setvoice(
-        interaction: discord.Interaction,
-        engine: str,
-        voice: str,
-        speed: int = 100
-    ):
+    async def setvoice(interaction: discord.Interaction, engine: str, voice: str, speed: int = 100):
         await ensure_db_connection()
 
         if speed < 50 or speed > 200:
@@ -202,10 +188,7 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message(f"設定の更新に失敗しました: {str(e)}")
 
     @setvoice.autocomplete('voice')
-    async def voice_autocomplete(
-        interaction: discord.Interaction,
-        current: str,
-    ) -> list[app_commands.Choice[str]]:
+    async def voice_autocomplete(interaction: discord.Interaction, current: str,) -> List[app_commands.Choice[str]]:
         engine = interaction.namespace.engine
         if not engine:
             return []
@@ -235,15 +218,8 @@ def setup_commands(tree: app_commands.CommandTree):
     dict_group = app_commands.Group(name='dict', description='辞書機能の設定')
 
     @dict_group.command(name='add', description='単語の読み方を登録します')
-    @app_commands.describe(
-        word='登録する単語',
-        to='変換後の読み方'
-    )
-    async def dict_add(
-        interaction: discord.Interaction,
-        word: str,
-        to: str
-    ):
+    @app_commands.describe(word='登録する単語', to='変換後の読み方')
+    async def dict_add(interaction: discord.Interaction, word: str, to: str):
         await ensure_db_connection()
 
         try:
@@ -272,13 +248,8 @@ def setup_commands(tree: app_commands.CommandTree):
             await interaction.response.send_message(f"単語一覧の取得に失敗しました: {str(e)}", ephemeral=True)
 
     @dict_group.command(name='remove', description='登録されている単語を削除します')
-    @app_commands.describe(
-        word='削除する単語'
-    )
-    async def dict_remove(
-        interaction: discord.Interaction,
-        word: str
-    ):
+    @app_commands.describe(word='削除する単語')
+    async def dict_remove(interaction: discord.Interaction, word: str):
         await ensure_db_connection()
 
         try:
@@ -294,7 +265,7 @@ def setup_commands(tree: app_commands.CommandTree):
 
     tree.add_command(dict_group)
 
-def validate_voice_engine(engine: str, voice: str, config: dict, voice_characters: dict) -> tuple[bool, str]:
+def validate_voice_engine(engine: str, voice: str, config: Dict, voice_characters: Dict) -> Tuple[bool, str]:
     if not config['engine_enabled'][engine]:
         return False, f'{engine}は無効になっています。'
     valid_voices = [v['value'] for v in voice_characters[engine_key[engine]]]
@@ -302,7 +273,7 @@ def validate_voice_engine(engine: str, voice: str, config: dict, voice_character
         return False, f'無効な{engine}の音声が指定されました。'
     return True, ''
 
-def get_voice_name(engine: str, voice: str, voice_characters: dict) -> str:
+def get_voice_name(engine: str, voice: str, voice_characters: Dict) -> str:
     for v in voice_characters[engine_key[engine]]:
         if v['value'] == voice:
             return v['name']

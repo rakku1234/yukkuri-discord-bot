@@ -1,0 +1,22 @@
+debug: false
+discord:
+    token: token
+database:
+    connection: sqlite
+    host: localhost
+    port: 3306
+    user: root
+    password: password
+    database: bot.db
+engine_enabled:
+    aquestalk1: false
+    aquestalk2: false
+    voicevox: true
+    aivisspeech: false
+voicevox:
+    edition:
+        core: true
+        engine: false
+    url: http://localhost:50021
+aivisspeech:
+    url: http://localhost:10101
