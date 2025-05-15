@@ -2,7 +2,6 @@ import os
 import discord
 import re
 import asyncio
-import json
 from collections import defaultdict
 from database import Database
 from text_to_speech import convert_text_to_speech
@@ -16,14 +15,15 @@ current_voice_settings = {}
 message_queues = defaultdict(asyncio.Queue)
 reading_tasks = {}
 
-with open('voice_character.json', encoding='utf-8') as f:
-    voice_characters = json.load(f)
-
 async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, voice_name: str, speed: int, engine: str):
     if not voice_client or not voice_client.is_connected():
         return
 
     config = await Config.async_load_config()
+    debug = config['debug']
+    if debug:
+        logger.debug(f"音声合成開始: {text}")
+        logger.debug(f"使用する音声合成エンジン: {engine}")
 
     try:
         match engine:
@@ -65,7 +65,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
         voice_client.play(discord.FFmpegPCMAudio(audio_file, before_options='-guess_layout_max 0'), after=after_playing)
         await future
     except Exception as e:
-        logger.error(f"音声合成エラー: {e}")
+        logger.error(f"音声合成エラー: {e}\n入力テキスト: {text}")
 
 db = Database()
 
