@@ -23,8 +23,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
     config = await Config.async_load_config()
     debug = config['debug']
     if debug:
-        logger.debug(f"音声合成開始: {text}")
-        logger.debug(f"使用する音声合成エンジン: {engine}")
+        logger.debug(f"音声合成開始: {text}\n使用する音声合成エンジン: {engine}")
         start_time = time.time()
 
     try:
