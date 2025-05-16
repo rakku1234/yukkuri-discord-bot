@@ -16,14 +16,14 @@ current_voice_settings = {}
 message_queues = defaultdict(asyncio.Queue)
 reading_tasks = {}
 
-async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, voice_name: str, speed: int, engine: str):
+async def speak_in_voice_channel(voice_client: discord.VoiceClient, message: discord.Message, voice_name: str, speed: int, engine: str):
     if not voice_client or not voice_client.is_connected():
         return
 
     config = await Config.async_load_config()
     debug = config['debug']
     if debug:
-        logger.debug(f"音声合成開始: {text}\n使用する音声合成エンジン: {engine}")
+        logger.debug(f"音声合成開始: {message}\n使用する音声合成エンジン: {engine}")
         start_time = time.time()
 
     try:
@@ -31,19 +31,19 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
             case 'voicevox':
                 if not config['engine_enabled']['voicevox']:
                     return
-                audio = voicevox(text, int(voice_name))
+                audio = voicevox(message, int(voice_name))
             case 'aivisspeech':
                 if not config['engine_enabled']['aivisspeech']:
                     return
-                audio = aivisspeech(text, int(voice_name))
+                audio = aivisspeech(message, int(voice_name))
             case 'aquestalk1':
                 if not config['engine_enabled']['aquestalk1']:
                     return
-                audio = AquesTalk1(text, speed, voice_name)
+                audio = AquesTalk1(message, speed, voice_name)
             case 'aquestalk2':
                 if not config['engine_enabled']['aquestalk2']:
                     return
-                audio = AquesTalk2(text, speed, voice_name)
+                audio = AquesTalk2(message, speed, voice_name)
             case _:
                 raise ValueError(f"無効なエンジン: {engine}")
 
@@ -51,9 +51,6 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
         if debug:
             end_time = time.time()
             logger.debug(f"音声合成完了 - 所要時間: {end_time - start_time}秒")
-
-        if audio_file is None:
-            return
 
         future = asyncio.Future()
         if debug:
@@ -71,7 +68,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
         voice_client.play(discord.FFmpegPCMAudio(audio_file, before_options='-guess_layout_max 0'), after=after_playing)
         await future
     except Exception as e:
-        logger.error(f"音声合成エラー: {e}\n入力テキスト: {text}")
+        logger.error(f"音声合成エラー: {e}\n入力メッセージ: {message}")
 
 db = Database()
 

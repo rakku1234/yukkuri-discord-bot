@@ -1,10 +1,10 @@
 import aiofiles
 from voicevox import voicevox
-from config import Config
 
 class aivisspeech(voicevox):
     def __init__(self, text: str, speaker: int):
-        self.url = Config.load_config()['aivisspeech']['url']
+        super().__init__(text, speaker)
+        self.url = self.config['aivisspeech']['url']
         self.params = {
             'text': text,
             'speaker': speaker

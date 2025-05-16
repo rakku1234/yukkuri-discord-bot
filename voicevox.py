@@ -6,17 +6,16 @@ from config import Config
 from pathlib import Path
 from loguru import logger
 from voicevox_core.asyncio import Onnxruntime, OpenJtalk, Synthesizer, VoiceModelFile
+from typing import Dict
 
 class VoicevoxConfig:
-    def get_default_config():
+    def get_default_config() -> Dict:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         match platform.system().lower():
             case 'windows':
                 onnxruntime_path = os.path.join(base_dir, 'voicevox', 'onnxruntime', 'lib', 'voicevox_onnxruntime.dll')
             case 'linux':
                 onnxruntime_path = os.path.join(base_dir, 'voicevox', 'onnxruntime', 'lib', 'libvoicevox_onnxruntime.so')
-            case _:
-                raise RuntimeError('サポートされていないオペレーティングシステムです')
 
         return {
             'vvm_path': os.path.join(base_dir, 'voicevox', 'models', 'vvms'),

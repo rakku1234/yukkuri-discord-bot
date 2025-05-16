@@ -14,8 +14,7 @@ class TextToSpeech:
                 path = os.path.join(self.dll_dir, 'AqKanji2Koe.dll')
             case 'linux':
                 path = os.path.join(self.dll_dir, 'libAqKanji2Koe.so')
-            case _:
-                raise RuntimeError('サポートされていないオペレーティングシステムです')
+
         self.aq_kanji2koe = ctypes.CDLL(path)
 
     def convert_text_to_speech(self) -> str:
@@ -46,8 +45,6 @@ class TextToSpeech:
                     return output_buffer.value.decode('utf-8')
                 else:
                     raise Exception(f"変換に失敗しました。エラーコード: {result}")
-            else:
-                raise RuntimeError(f"サポートされていないプラットフォームです")
         finally:
             if instance:
                 try:

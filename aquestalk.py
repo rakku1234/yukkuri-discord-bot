@@ -11,15 +11,13 @@ class AquesTalk1:
         self.temp_file = None
         self.aquestalk = None
 
-    def init(self):
+    def init(self) -> None:
         system = platform.system().lower()
         match system:
             case 'windows':
                 path = os.path.join(os.path.dirname(__file__), 'AquesTalk1', 'lib', self.voice_name, 'AquesTalk.dll')
             case 'linux':
                 path = os.path.join(os.path.dirname(__file__), 'AquesTalk1', 'lib', self.voice_name, 'libAquesTalk.so')
-            case _:
-                raise RuntimeError('サポートされていないオペレーティングシステムです')
 
         self.aquestalk = ctypes.CDLL(path)
 
@@ -58,20 +56,17 @@ class AquesTalk2:
         self.temp_file = None
         self.aquestalk = None
 
-    async def init(self):
+    async def init(self) -> None:
         system = platform.system().lower()
         match system:
             case 'windows':
-                lib_name = 'AquesTalk2.dll'
+                path = os.path.join(os.path.dirname(__file__), 'AquesTalk2', 'lib', self.voice_name, 'AquesTalk2.dll')
             case 'linux':
-                lib_name = 'libAquesTalk2Eva.so'
-            case _:
-                raise RuntimeError('サポートされていないオペレーティングシステムです')
+                path = os.path.join(os.path.dirname(__file__), 'AquesTalk2', 'lib', self.voice_name, 'libAquesTalk2Eva.so')
 
-        lib_path = os.path.join(os.path.dirname(__file__), 'AquesTalk2', 'lib', lib_name)
         phont_file = os.path.join(os.path.dirname(__file__), 'AquesTalk2', 'phont', f"{self.voice_name}.phont")
 
-        self.aquestalk = ctypes.CDLL(lib_path)
+        self.aquestalk = ctypes.CDLL(path)
 
         self.aquestalk.AquesTalk2_Synthe_Utf8.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_void_p]
         self.aquestalk.AquesTalk2_Synthe_Utf8.restype = ctypes.POINTER(ctypes.c_ubyte)

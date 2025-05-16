@@ -1,4 +1,6 @@
 import discord
+import platform
+import sys
 from discord import app_commands
 from discord_cmd import setup_commands
 from vc import read_message, db
@@ -124,5 +126,9 @@ async def on_message(message):
 
     if len(message.content) > 0:
         await read_message(message)
+
+if platform.system().lower() not in ['windows', 'linux']:
+    logger.critical('サポートされていないオペレーティングシステムです')
+    sys.exit(1)
 
 client.run(Config.load_config()['discord']['token'])
