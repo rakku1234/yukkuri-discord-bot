@@ -87,6 +87,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 try:
                     await after.channel.connect(self_deaf=True)
                     await db.set_read_channel(member.guild.id, after.channel.id, autojoin[1])
+                    _, chat_channel_id = await db.get_read_channel(member.guild.id)
+                    chat_channel = member.guild.get_channel(chat_channel_id)
+                    if chat_channel:
+                        await chat_channel.send(embed=discord.Embed(color=discord.Color.dark_blue(), description='ユーザーが参加したためボイスチャンネルに接続しました'))
                     if debug:
                         logger.debug(f"{member.guild.id}の自動参加に成功しました")
                 except Exception as e:
@@ -101,7 +105,8 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
     if before.channel is not None and after.channel is None:
         voice_client = member.guild.voice_client
         if voice_client and voice_client.is_connected() and voice_client.channel == before.channel:
-            await read_message(f"{member.display_name}が退出しました", member.guild, member, before.channel)
+            if len([m for m in before.channel.members if not m.bot]) > 1:
+                await read_message(f"{member.display_name}が退出しました", member.guild, member, before.channel)
 
     voice_client = member.guild.voice_client
     if voice_client is None:
@@ -111,10 +116,13 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
     if channel is None:
         return
 
-    member_count = len([m for m in channel.members if not m.bot])
-
-    if member_count == 0:
+    if len([m for m in channel.members if not m.bot]) == 0:
+        _, chat_channel_id = await db.get_read_channel(voice_client.guild.id)
         await voice_client.disconnect()
+        if chat_channel_id:
+            chat_channel = voice_client.guild.get_channel(chat_channel_id)
+            if chat_channel:
+                await chat_channel.send(embed=discord.Embed(color=discord.Color.dark_blue(), description='ボイスチャットからユーザーがいなくなったため退出しました'))
         await db.remove_read_channel(voice_client.guild.id)
         if debug:
             logger.debug(f"{voice_client.guild.id}のボイスチャンネルのメンバーはいないため読み上げチャンネルから削除しました")
