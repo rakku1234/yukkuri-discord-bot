@@ -8,7 +8,7 @@ from database import Database
 from text_to_speech import TextToSpeech
 from loguru import logger
 from aquestalk import AquesTalk1, AquesTalk2
-from voicevox import Voicevox
+from voicevox import voicevox
 from aivisspeech import aivisspeech
 from config import Config
 
@@ -31,7 +31,7 @@ async def speak_in_voice_channel(voice_client: discord.VoiceClient, text: str, v
             case 'voicevox':
                 if not config['engine_enabled']['voicevox']:
                     return
-                audio = Voicevox(text, int(voice_name))
+                audio = voicevox(text, int(voice_name))
             case 'aivisspeech':
                 if not config['engine_enabled']['aivisspeech']:
                     return
@@ -91,13 +91,10 @@ async def process_message_queue(guild_id: int):
             logger.error(f"メッセージキュー処理エラー: {e}")
             continue
 
-async def read_message(message_or_text, guild=None, author=None, channel=None):
-    if isinstance(message_or_text, str):
-        text = message_or_text
-        if guild is None or channel is None:
-            return
+async def read_message(message: str | discord.Message, guild: discord.Guild = None, author: discord.Member = None, channel: discord.TextChannel = None):
+    if isinstance(message, str):
+        text = message
     else:
-        message = message_or_text
         if message.author.bot:
             return
 

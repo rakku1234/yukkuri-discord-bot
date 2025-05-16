@@ -4,7 +4,7 @@ from discord_cmd import setup_commands
 from vc import read_message, db
 from config import Config
 from loguru import logger
-from voicevox import Voicevox
+from voicevox import voicevox
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -58,9 +58,9 @@ async def on_ready():
     try:
         config = await Config.async_load_config()
         if config['engine_enabled']['voicevox'] and config['voicevox']['edition']['core']:
-            await Voicevox.init()
+            await voicevox.init()
     except Exception as e:
-        logger.error(f"Voicevoxの初期化に失敗しました: {e}")
+        logger.error(f"voicevoxの初期化に失敗しました: {e}")
 
 @client.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):

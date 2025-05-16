@@ -24,7 +24,7 @@ class VoicevoxConfig:
             'dict_dir': os.path.join(base_dir, 'voicevox', 'dict', 'open_jtalk_dic_utf')
         }
 
-class Voicevox:
+class voicevox:
     _instance = None
     _synthesizer = None
     _initialized = False
@@ -42,8 +42,8 @@ class Voicevox:
                 'speaker': style_id
             }
 
-        if Voicevox._instance is None:
-            Voicevox._instance = self
+        if voicevox._instance is None:
+            voicevox._instance = self
 
     @classmethod
     async def init(cls) -> None:
@@ -81,36 +81,13 @@ class Voicevox:
             if self.config['debug']:
                 logger.debug(f"音声生成を開始 - テキスト: {self.text}, スタイルID: {self.style_id}")
             if self.config['voicevox']['edition']['core']:
-                if Voicevox._synthesizer is None:
+                if voicevox._synthesizer is None:
                     raise RuntimeError('シンセサイザーが初期化されていません')
 
-                wav = await Voicevox._synthesizer.tts(self.text, self.style_id)
+                wav = await voicevox._synthesizer.tts(self.text, self.style_id)
 
             elif self.config['voicevox']['edition']['engine']:
-                async with aiohttp.ClientSession(self.url) as session:
-                    json_response = await session.post(
-                        '/audio_query',
-                        headers={
-                            'Content-Type': 'application/json'
-                        },
-                        params=self.params
-                    )
-                    json_data = await json_response.json()
-                    if json_response.status != 200:
-                        raise Exception(f"audio_queryのリクエストに失敗しました: {json_data['detail'][0]['msg']}")
-                    del self.params['text']
-                    response = await session.post(
-                        '/synthesis',
-                        headers={
-                            'Content-Type': 'application/json',
-                            'Accept': 'audio/wav'
-                        },
-                        params=self.params,
-                        json=json_data
-                    )
-                    if response.status != 200:
-                        raise Exception(f"synthesisのリクエストに失敗しました: {await response.json()['detail'][0]['msg']}")
-                    wav = await response.read()
+                wav = await self._get_engine()
             else:
                 raise RuntimeError('voicevoxのエンジンが有効になっていません')
 
@@ -126,3 +103,29 @@ class Voicevox:
 
         except Exception as e:
             raise RuntimeError(e)
+
+    async def _get_engine(self) -> bytes:
+        async with aiohttp.ClientSession(self.url) as session:
+            json_response = await session.post(
+                '/audio_query',
+                headers={
+                    'Content-Type': 'application/json'
+                },
+                params=self.params
+            )
+            json_data = await json_response.json()
+            if json_response.status != 200:
+                raise Exception(f"audio_queryのリクエストに失敗しました: {json_data['detail'][0]['msg']}")
+            del self.params['text']
+            response = await session.post(
+                '/synthesis',
+                headers={
+                    'Content-Type': 'application/json',
+                    'Accept': 'audio/wav'
+                },
+                params=self.params,
+                json=json_data
+            )
+            if response.status != 200:
+                raise Exception(f"synthesisのリクエストに失敗しました: {await response.json()['detail'][0]['msg']}")
+            return await response.read()
