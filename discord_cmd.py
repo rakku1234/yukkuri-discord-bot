@@ -182,6 +182,8 @@ def setup_commands(tree: app_commands.CommandTree):
             )
             if engine.startswith('aquestalk'):
                 message += f"速度: {speed}"
+            elif engine == 'voicevox':
+                message += f"VOICEVOX: {voice_name}"
 
             await interaction.response.send_message(embed=discord.Embed(color=discord.Color.blue(), description=message))
         except Exception as e:
