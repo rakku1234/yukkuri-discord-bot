@@ -2,8 +2,8 @@ import aiofiles
 from voicevox import voicevox
 
 class aivisspeech(voicevox):
-    def __init__(self, text: str, speaker: int):
-        super().__init__(text, speaker)
+    def __init__(self, text: str, speaker: int, speed: float):
+        super().__init__(text, speaker, speed)
         self.url = self.config['aivisspeech']['url']
         self.params = {
             'text': text,

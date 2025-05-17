@@ -28,9 +28,10 @@ class voicevox:
     _synthesizer = None
     _initialized = False
 
-    def __init__(self, text: str, style_id: int = 0):
+    def __init__(self, text: str, style_id: int = 0, speed: float = 1.0):
         self.text = text
-        self.style_id = int(style_id)
+        self.style_id = style_id
+        self.speed = speed
         self.voicevox_config = VoicevoxConfig.get_default_config()
         self.temp_file = None
         self.config = Config.load_config()
@@ -78,12 +79,14 @@ class voicevox:
     async def get_audio(self) -> str:
         try:
             if self.config['debug']:
-                logger.debug(f"音声生成を開始 - テキスト: {self.text}, スタイルID: {self.style_id}")
+                logger.debug(f"音声生成を開始 - テキスト: {self.text}, スタイルID: {self.style_id}, 速度: {self.speed}")
             if self.config['voicevox']['edition']['core']:
                 if voicevox._synthesizer is None:
                     raise RuntimeError('シンセサイザーが初期化されていません')
 
-                wav = await voicevox._synthesizer.tts(self.text, self.style_id)
+                audio_query = await voicevox._synthesizer.create_audio_query(self.text, self.style_id)
+                audio_query.speed_scale = self.speed
+                wav = await voicevox._synthesizer.synthesis(audio_query, self.style_id)
 
             elif self.config['voicevox']['edition']['engine']:
                 wav = await self._get_engine()
@@ -113,6 +116,7 @@ class voicevox:
                 params=self.params
             )
             json_data = await json_response.json()
+            json_data['speedScale'] = self.speed
             if json_response.status != 200:
                 raise Exception(f"audio_queryのリクエストに失敗しました: {json_data['detail'][0]['msg']}")
             del self.params['text']

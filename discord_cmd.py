@@ -128,7 +128,7 @@ def setup_commands(tree: app_commands.CommandTree):
     @app_commands.describe(
         engine='音声エンジンの選択',
         voice='声の指定',
-        speed='読み上げ速度（デフォルト: 100）'
+        speed='読み上げ速度（AquesTalk: 50-200, VOICEVOX/AivisSpeech: 0.5-5）'
     )
     @app_commands.choices(
         engine=[
@@ -138,12 +138,19 @@ def setup_commands(tree: app_commands.CommandTree):
             app_commands.Choice(name='AivisSpeech', value='aivisspeech')
         ]
     )
-    async def setvoice(interaction: discord.Interaction, engine: str, voice: str, speed: int = 100):
+    async def setvoice(interaction: discord.Interaction, engine: str, voice: str, speed: float = 1.0):
         await ensure_db_connection()
 
-        if speed < 50 or speed > 200:
-            await interaction.response.send_message(embed=discord.Embed(color=discord.Color.red(), description='速度は50から200の間で指定してください。'), ephemeral=True)
-            return
+        if engine.startswith('aquestalk'):
+            if speed == 1.0:
+                speed = 100
+            if speed < 50 or speed > 200:
+                await interaction.response.send_message(embed=discord.Embed(color=discord.Color.red(), description='AquesTalkの速度は50から200の間で指定してください。'), ephemeral=True)
+                return
+        else:
+            if speed < 0.5 or speed > 5:
+                await interaction.response.send_message(embed=discord.Embed(color=discord.Color.red(), description='VOICEVOX/AivisSpeechの速度は0.5から10の間で指定してください。'), ephemeral=True)
+                return
 
         config = await Config.async_load_config()
 
@@ -179,10 +186,9 @@ def setup_commands(tree: app_commands.CommandTree):
                 f"ボイス設定を更新しました。\n"
                 f"エンジン: {engine}\n"
                 f"キャラクター: {voice_name}\n"
+                f"速度: {speed}\n"
             )
-            if engine.startswith('aquestalk'):
-                message += f"速度: {speed}"
-            elif engine == 'voicevox':
+            if engine == 'voicevox':
                 message += f"VOICEVOX: {voice_name}"
 
             await interaction.response.send_message(embed=discord.Embed(color=discord.Color.blue(), description=message))

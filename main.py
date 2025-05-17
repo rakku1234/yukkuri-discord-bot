@@ -117,15 +117,20 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         return
 
     if len([m for m in channel.members if not m.bot]) == 0:
-        _, chat_channel_id = await db.get_read_channel(voice_client.guild.id)
-        await voice_client.disconnect()
-        if chat_channel_id:
-            chat_channel = voice_client.guild.get_channel(chat_channel_id)
-            if chat_channel:
-                await chat_channel.send(embed=discord.Embed(color=discord.Color.dark_blue(), description='ボイスチャットからユーザーがいなくなったため退出しました'))
-        await db.remove_read_channel(voice_client.guild.id)
-        if debug:
-            logger.debug(f"{voice_client.guild.id}のボイスチャンネルのメンバーはいないため読み上げチャンネルから削除しました")
+        read_channel = await db.get_read_channel(voice_client.guild.id)
+        if read_channel:
+            _, chat_channel_id = read_channel
+            await voice_client.disconnect()
+            if chat_channel_id:
+                chat_channel = voice_client.guild.get_channel(chat_channel_id)
+                if chat_channel:
+                    await chat_channel.send(embed=discord.Embed(color=discord.Color.dark_blue(), description='ボイスチャットからユーザーがいなくなったため退出しました'))
+            await db.remove_read_channel(voice_client.guild.id)
+            if debug:
+                logger.debug(f"{voice_client.guild.id}のボイスチャンネルのメンバーはいないため読み上げチャンネルから切断しました")
+        else:
+            if voice_client.is_connected():
+                await voice_client.disconnect()
 
 @client.event
 async def on_message(message):
